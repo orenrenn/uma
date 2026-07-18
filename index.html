@@ -142,7 +142,10 @@
           const auth = firebase.auth();
           const db = firebase.firestore();
           
-          await auth.getRedirectResult().catch(e => console.error("Redirect Error:", e));
+          // エラーが発生した場合に画面に詳細を表示する（原因特定のため）
+          await auth.getRedirectResult().catch(e => {
+            alert("【ログイン通信エラー】\n" + e.message + "\n\n通信がブロックされました。「キャッシュの完全修復」をお試しください。");
+          });
 
           auth.onAuthStateChanged((user) => {
             if (user) {
@@ -150,7 +153,6 @@
               cloudUserRef.current = user;
               setIsCloudMode(true);
 
-              // 🌟 端末間データの賢いマージ（合流）処理 🌟
               db.collection('users').doc(user.uid).get().then((doc) => {
                 let cloudRaces = [];
                 if (doc.exists) { cloudRaces = doc.data().races || []; }
@@ -160,7 +162,6 @@
                 
                 let merged = false;
                 if (localRaces.length > 0) {
-                  // クラウドに存在しないローカル（この端末）のレースだけを抽出して追加
                   const newRaces = localRaces.filter(lr => !cloudRaces.some(cr => cr.id === lr.id));
                   if (newRaces.length > 0) {
                     cloudRaces = [...newRaces, ...cloudRaces];
@@ -168,17 +169,14 @@
                   }
                 }
                 
-                // 初回ログイン時、またはマージが発生した場合はクラウドを上書き更新
                 if (merged || !doc.exists) {
                   db.collection('users').doc(user.uid).set({ races: cloudRaces }).catch(e => console.error(e));
                 }
                 
                 setRaces(cloudRaces);
-                // クラウドの最新状態をローカルにも常にバックアップ保存しておく（ログアウト対策）
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRaces));
                 setLoading(false);
                 
-                // リアルタイム同期の開始
                 db.collection('users').doc(user.uid).onSnapshot((snap) => {
                   if (snap.exists) {
                     const updatedRaces = snap.data().races || [];
@@ -187,7 +185,7 @@
                   }
                 });
               }).catch((error) => {
-                alert("クラウドデータベースとの通信に失敗しました。");
+                alert("データベースの読み込みに失敗しました。");
                 setLoading(false);
               });
             } else {
@@ -210,17 +208,20 @@
           if (!firebase.apps.length) firebase.initializeApp(config);
           
           const provider = new firebase.auth.GoogleAuthProvider();
+          
+          // iPhoneのホーム画面アプリ(PWA)かどうかを判定
           const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-          if (isStandalone || isMobile) {
+          if (isStandalone) {
+            // ホーム画面アプリの場合はリダイレクト
             await firebase.auth().signInWithRedirect(provider);
           } else {
+            // Safariなどの普通のブラウザの場合は「ポップアップ」を使用（こちらの方が安定します）
             await firebase.auth().signInWithPopup(provider);
             window.location.reload();
           }
         } catch (e) {
-          alert("ログイン処理に失敗しました。設定(JSON)が正しいか確認してください。");
+          alert("ログイン開始エラー: " + e.message);
         }
       };
 
@@ -232,14 +233,28 @@
         }
       };
 
-      // 🌟 バグ修復用：Firebaseの認証キャッシュを強制削除する 🌟
+      // 🌟 バグ修復用：Firebaseのゴミデータを「全て」強制削除する（アルティメット版） 🌟
       const handleFixLoginCache = () => {
-        if(window.confirm("ログインシステムのキャッシュをリセットしますか？\n※これまでに作成したレース予想データは消えませんので安心してください。")) {
+        if(window.confirm("ログインシステムのキャッシュを「完全」にリセットしますか？\n※予想データは消えませんのでご安心ください。")) {
           try {
+            // 1. IndexedDBの削除
             indexedDB.deleteDatabase('firebaseLocalStorageDb');
+            // 2. セッションストレージ（リダイレクト時の一時データ）の削除
+            sessionStorage.clear();
+            // 3. ローカルストレージ内のFirebase関連のゴミだけを全削除
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith('firebase:')) {
+                keysToRemove.push(key);
+              }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
           } catch(e) { console.error(e); }
+          
           localStorage.removeItem(CONFIG_KEY);
-          alert("リセットが完了しました！\n\n【重要】この後、iPhoneの画面を上にスワイプしてアプリを「完全に終了」させてから、もう一度アプリを開いてログインをお試しください。");
+          alert("完全リセットが完了しました！\n\n【重要】この後、iPhoneの画面を上にスワイプしてアプリ（またはSafari）を「完全に終了（タスクキル）」させてから、もう一度開いてください。");
+          window.location.reload();
         }
       };
 
@@ -302,11 +317,8 @@
 
       if (loading) return null;
 
-const renderSettings = () => (
-        // 修正点1: 「items-center(中央揃え)」をやめて「items-start(上揃え)」にし、上から「pt-16(約64px)」の余白を強制的に確保
+      const renderSettings = () => (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16 animate-fade-in">
-          
-          {/* 修正点2: 高さは「画面の80% (max-h-[80vh])」までに制限し、キーボードが出ても潰れないようにする */}
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl flex flex-col max-h-[80vh]">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2 flex-shrink-0"><CloudIcon className="text-blue-500" /> データ同期設定</h3>
             
@@ -331,9 +343,9 @@ const renderSettings = () => (
                   
                   <div className="mt-6 pt-4 border-t border-gray-100">
                     <p className="text-[10px] text-gray-500 mb-2 font-bold">🛠️ トラブルシューティング</p>
-                    <p className="text-[10px] text-gray-400 mb-2 leading-tight">何度ログインしても同期されない場合、アプリ内にゴミデータが残ってエラーを起こしています。（※予想データは消えません）</p>
-                    <button onClick={handleFixLoginCache} className="w-full bg-gray-100 text-gray-600 text-xs font-bold py-2 rounded-lg hover:bg-gray-200">
-                      ログインキャッシュを修復する
+                    <p className="text-[10px] text-gray-400 mb-2 leading-tight">何度ログインしても同期されない場合、iPhone内にゴミデータが残って通信をブロックしています。</p>
+                    <button onClick={handleFixLoginCache} className="w-full bg-gray-100 text-gray-600 text-xs font-bold py-2 rounded-lg hover:bg-gray-200 mt-1">
+                      ログインキャッシュを完全修復する
                     </button>
                   </div>
                 </div>
