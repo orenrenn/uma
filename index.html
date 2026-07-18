@@ -36,7 +36,7 @@
     class ErrorBoundary extends React.Component {
       constructor(props) { super(props); this.state = { hasError: false }; }
       static getDerivedStateFromError(error) { return { hasError: true }; }
-      handleReset = () => { localStorage.removeItem('keiba-app-v5'); window.location.reload(); }
+      handleReset = () => { localStorage.removeItem('uma-memo-data-v1'); window.location.reload(); }
       render() {
         if (this.state.hasError) {
           return (
