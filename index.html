@@ -209,17 +209,10 @@
           
           const provider = new firebase.auth.GoogleAuthProvider();
           
-          // iPhoneのホーム画面アプリ(PWA)かどうかを判定
-          const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-          if (isStandalone) {
-            // ホーム画面アプリの場合はリダイレクト
-            await firebase.auth().signInWithRedirect(provider);
-          } else {
-            // Safariなどの普通のブラウザの場合は「ポップアップ」を使用（こちらの方が安定します）
-            await firebase.auth().signInWithPopup(provider);
-            window.location.reload();
-          }
+          // 【変更点】リダイレクトを完全にやめ、すべて「ポップアップ方式」に統一しました。
+          await firebase.auth().signInWithPopup(provider);
+          window.location.reload();
+          
         } catch (e) {
           alert("ログイン開始エラー: " + e.message);
         }
