@@ -39,7 +39,7 @@
     <h1 style="color: #16a34a; font-size: 24px; margin-bottom: 12px; font-weight: bold;">ウマメモ</h1>
     <p id="fallback-message" style="color: #6b7280; font-size: 14px; line-height: 1.6;">
       アプリを起動しています...🐎<br><br>
-      <span style="font-size: 12px; opacity: 0.8;">※ログイン処理中は少し時間がかかります。<br>そのままお待ちください。</span>
+      <span style="font-size: 12px; opacity: 0.8;">※通信環境の良い場所でお待ちください。</span>
     </p>
   </div>
 
@@ -91,6 +91,7 @@
     const getTodayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
     function App() {
+      // PWA用アイコン生成
       useEffect(() => {
         const createTouchIcon = () => {
           const canvas = document.createElement('canvas'); canvas.width = 180; canvas.height = 180;
@@ -104,6 +105,7 @@
         createTouchIcon();
       }, []);
 
+      // 状態管理
       const [races, setRaces] = useState([]);
       const [loading, setLoading] = useState(true);
       const [isCloudMode, setIsCloudMode] = useState(false);
@@ -121,7 +123,6 @@
       const [sortType, setSortType] = useState('number');
       const [copyStatus, setCopyStatus] = useState('');
       const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-      // 前回入力した設定があれば最初から入力欄に入れておく
       const [configInput, setConfigInput] = useState(localStorage.getItem(CONFIG_KEY) || '');
 
       useEffect(() => {
@@ -129,6 +130,7 @@
         if (savedConfig) {
           initCloud(savedConfig);
         } else {
+          // ローカルモード
           const localData = localStorage.getItem(STORAGE_KEY);
           if (localData) { try { setRaces(JSON.parse(localData)); } catch(e){} }
           setLoading(false);
@@ -143,25 +145,62 @@
           const auth = firebase.auth();
           const db = firebase.firestore();
           
-          // 🌟 ループ防止策1：Googleから戻ってきた時の「結果」を確実に受け取る 🌟
-          // ※ポップアップ方式に変更したため、リダイレクト結果の受け取りは保険として残します
-          await auth.getRedirectResult().catch(e => console.error("Redirect Error:", e));
+          // リダイレクト方式にフォールバックした時のための受け取り処理
+          try { await auth.getRedirectResult(); } catch(e) {}
 
           auth.onAuthStateChanged((user) => {
             if (user) {
-              // ログイン成功
               cloudModeRef.current = true;
               cloudUserRef.current = user;
               setIsCloudMode(true);
 
+              let isFirstSync = true; // 初回読み込み時のみマージを実行するフラグ
+
               db.collection('users').doc(user.uid).onSnapshot((doc) => {
                 if (doc.exists) {
-                  setRaces(doc.data().races || []);
+                  const cloudRaces = doc.data().races || [];
+                  
+                  // 🌟 修正: 初回同期時のみ、別端末のローカルデータとマージする 🌟
+                  if (isFirstSync) {
+                    const localData = localStorage.getItem(STORAGE_KEY);
+                    let mergedRaces = [...cloudRaces];
+                    let isMerged = false;
+
+                    if (localData) {
+                      try {
+                        const localRaces = JSON.parse(localData);
+                        if (Array.isArray(localRaces)) {
+                          localRaces.forEach(localRace => {
+                            // クラウドに存在しないレース（別端末で作ったもの）だけを追加
+                            if (!cloudRaces.some(cr => cr.id === localRace.id)) {
+                              mergedRaces.push(localRace);
+                              isMerged = true;
+                            }
+                          });
+                        }
+                      } catch(e) {}
+                    }
+
+                    if (isMerged) {
+                      // 合流させた新しいデータをクラウドに保存
+                      db.collection('users').doc(user.uid).set({ races: mergedRaces });
+                      setRaces(mergedRaces);
+                    } else {
+                      setRaces(cloudRaces);
+                    }
+                    isFirstSync = false;
+                  } else {
+                    // 2回目以降はそのまま反映
+                    setRaces(cloudRaces);
+                  }
+                  
                 } else {
+                  // クラウドが空の場合は、ローカルデータをアップロード
                   const localData = localStorage.getItem(STORAGE_KEY);
                   const initialRaces = localData ? JSON.parse(localData) : [];
                   db.collection('users').doc(user.uid).set({ races: initialRaces });
                   setRaces(initialRaces);
+                  isFirstSync = false;
                 }
                 setLoading(false);
               }, (error) => {
@@ -169,8 +208,7 @@
                 setLoading(false);
               });
             } else {
-              // 🌟 ループ防止策2：未ログインでも勝手にリダイレクトさせない！ 🌟
-              // （ローカルモードとして通常通り表示するだけ）
+              // ログアウト状態
               const localData = localStorage.getItem(STORAGE_KEY);
               if (localData) { try { setRaces(JSON.parse(localData)); } catch(e){} }
               setLoading(false);
@@ -184,29 +222,39 @@
         }
       };
 
-      // 🌟 ボタンを押した時だけログイン画面に飛ばす 🌟
       const handleLoginClick = async () => {
         try {
           const config = JSON.parse(configInput);
           localStorage.setItem(CONFIG_KEY, configInput);
           if (!firebase.apps.length) firebase.initializeApp(config);
+          
+          const auth = firebase.auth();
           const provider = new firebase.auth.GoogleAuthProvider();
           
-          // 🌟 iPhoneのセキュリティによる証拠隠滅を防ぐため、ポップアップ方式に変更 🌟
-          await firebase.auth().signInWithPopup(provider);
-          
-        } catch (e) {
-          console.error(e);
-          if (e.code === 'auth/popup-blocked') {
-            alert("ポップアップがブロックされました。ブラウザの設定で許可してください。");
-          } else if (e.code !== 'auth/popup-closed-by-user') {
-            alert("ログイン処理中にエラーが発生しました。設定(JSON)を確認してください。");
+          try {
+            // 1. まずポップアップでのログインを試みる
+            await auth.signInWithPopup(provider);
+            // 🌟 修正: 成功したら画面をリロードして、確実に同期処理（initCloud）を発動させる 🌟
+            window.location.reload();
+            
+          } catch(err) {
+            // 2. ポップアップがブロックされた場合は、リダイレクト方式でやり直す
+            if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+               await auth.signInWithRedirect(provider);
+            } else if (err.code !== 'auth/popup-closed-by-user') {
+               alert("ログインエラー: " + err.message);
+            }
           }
+        } catch (e) {
+          alert("正しいJSON形式で入力してください。");
         }
       };
 
       const handleDisconnect = async () => {
         if(window.confirm("連携を解除してローカル保存に戻りますか？\n※Google上のデータは消えません")) {
+          // 🌟 修正: 切断前に、クラウドの最新データをローカルに引き継いでおく 🌟
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(races));
+          
           try { if(firebase.apps.length > 0) await firebase.auth().signOut(); } catch(e) {}
           localStorage.removeItem(CONFIG_KEY);
           window.location.reload();
@@ -285,16 +333,18 @@
                     <p className="text-xs opacity-70 truncate max-w-[200px]">{cloudUserRef.current?.displayName || cloudUserRef.current?.email || 'ログイン済み'}</p>
                   </div>
                 </div>
-                <button onClick={handleDisconnect} className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100">連携を解除する</button>
+                <button onClick={handleDisconnect} className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors">連携を解除する</button>
               </div>
             ) : (
               <div>
                 <p className="text-xs text-gray-600 mb-3 leading-relaxed">Firebaseの設定(JSON)を貼り付けると、Googleアカウントでのログイン画面が開き、データをクラウドに保存できます。</p>
                 <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", ...}' className="w-full border border-gray-200 rounded-xl p-3 text-xs h-32 outline-none focus:border-green-600 bg-gray-50 mb-4 font-mono shadow-inner" />
-                <button onClick={handleLoginClick} disabled={!configInput.trim()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl mb-2 disabled:opacity-50 hover:bg-blue-700"><GoogleIcon size={20} className="bg-white rounded-full p-0.5"/> Googleでログインして同期</button>
+                <button onClick={handleLoginClick} disabled={!configInput.trim()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl mb-2 disabled:opacity-50 hover:bg-blue-700 transition-colors">
+                  <GoogleIcon size={20} className="bg-white rounded-full p-0.5"/> Googleでログインして同期
+                </button>
               </div>
             )}
-            <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-2 hover:bg-gray-50 rounded-xl">閉じる</button>
+            <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-2 hover:bg-gray-50 rounded-xl transition-colors">閉じる</button>
           </div>
         </div>
       );
@@ -307,8 +357,8 @@
             <div className="flex justify-between items-center mb-8 mt-2 md:mt-4">
               <h1 className="text-xl font-bold tracking-tight text-green-800 flex items-center gap-2"><Flag className="text-green-600" /> ウマメモ{isCloudMode && <CloudIcon className="text-blue-500" size={18} />}</h1>
               <div className="flex gap-2">
-                <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full bg-white shadow-sm border border-gray-100"><SettingsIcon size={18} /></button>
-                <button onClick={() => setIsAddingRace(true)} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-full shadow-sm flex items-center gap-1 text-sm font-medium"><Plus size={16} /> 追加</button>
+                <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full bg-white shadow-sm border border-gray-100 transition-transform active:scale-95"><SettingsIcon size={18} /></button>
+                <button onClick={() => setIsAddingRace(true)} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-full shadow-sm flex items-center gap-1 text-sm font-medium transition-transform active:scale-95"><Plus size={16} /> 追加</button>
               </div>
             </div>
 
@@ -416,6 +466,7 @@
       );
     }
     
+    // スクリプト読み込み完了時に待機画面を非表示にする
     const fallbackUi = document.getElementById('fallback-ui');
     if (fallbackUi) fallbackUi.style.display = 'none';
 
