@@ -303,14 +303,14 @@
       if (loading) return null;
 
 const renderSettings = () => (
-        // 修正点1: 余白を調整し、背景の黒い部分(バックドロップ)のパディングをシンプルにする
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pt-safe pb-safe animate-fade-in">
-          {/* 修正点2: 高さを「最大で画面の85% (max-h-[85vh])」に指定し、潰れるのを防ぐ */}
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[85vh] flex flex-col">
+        // 修正点1: 「items-center(中央揃え)」をやめて「items-start(上揃え)」にし、上から「pt-16(約64px)」の余白を強制的に確保
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16 animate-fade-in">
+          
+          {/* 修正点2: 高さは「画面の80% (max-h-[80vh])」までに制限し、キーボードが出ても潰れないようにする */}
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl flex flex-col max-h-[80vh]">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2 flex-shrink-0"><CloudIcon className="text-blue-500" /> データ同期設定</h3>
             
-            {/* 修正点3: 中身のコンテンツエリアだけをスクロールさせる (flex-1 overflow-y-auto) */}
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2 pb-2">
               {isCloudMode ? (
                 <div>
                   <div className="bg-blue-50 text-blue-900 p-4 rounded-xl mb-4 border border-blue-100 flex items-center gap-3 shadow-sm">
@@ -340,7 +340,6 @@ const renderSettings = () => (
               )}
             </div>
             
-            {/* 修正点4: 閉じるボタンはスクロールせず、常に一番下に固定する (flex-shrink-0) */}
             <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-4 hover:bg-gray-50 rounded-xl border border-transparent flex-shrink-0">閉じる</button>
           </div>
         </div>
