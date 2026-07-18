@@ -39,7 +39,7 @@
     <h1 style="color: #16a34a; font-size: 24px; margin-bottom: 12px; font-weight: bold;">ウマメモ</h1>
     <p id="fallback-message" style="color: #6b7280; font-size: 14px; line-height: 1.6;">
       アプリを起動しています...🐎<br><br>
-      <span style="font-size: 12px; opacity: 0.8;">※通信環境の良い場所でお待ちください。</span>
+      <span style="font-size: 12px; opacity: 0.8;">※処理中は少し時間がかかります。<br>そのままお待ちください。</span>
     </p>
   </div>
 
@@ -91,7 +91,6 @@
     const getTodayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
     function App() {
-      // PWA用アイコン生成
       useEffect(() => {
         const createTouchIcon = () => {
           const canvas = document.createElement('canvas'); canvas.width = 180; canvas.height = 180;
@@ -105,7 +104,6 @@
         createTouchIcon();
       }, []);
 
-      // 状態管理
       const [races, setRaces] = useState([]);
       const [loading, setLoading] = useState(true);
       const [isCloudMode, setIsCloudMode] = useState(false);
@@ -130,7 +128,6 @@
         if (savedConfig) {
           initCloud(savedConfig);
         } else {
-          // ローカルモード
           const localData = localStorage.getItem(STORAGE_KEY);
           if (localData) { try { setRaces(JSON.parse(localData)); } catch(e){} }
           setLoading(false);
@@ -145,8 +142,7 @@
           const auth = firebase.auth();
           const db = firebase.firestore();
           
-          // リダイレクト方式にフォールバックした時のための受け取り処理
-          try { await auth.getRedirectResult(); } catch(e) {}
+          await auth.getRedirectResult().catch(e => console.error("Redirect Error:", e));
 
           auth.onAuthStateChanged((user) => {
             if (user) {
@@ -154,61 +150,47 @@
               cloudUserRef.current = user;
               setIsCloudMode(true);
 
-              let isFirstSync = true; // 初回読み込み時のみマージを実行するフラグ
-
-              db.collection('users').doc(user.uid).onSnapshot((doc) => {
-                if (doc.exists) {
-                  const cloudRaces = doc.data().races || [];
-                  
-                  // 🌟 修正: 初回同期時のみ、別端末のローカルデータとマージする 🌟
-                  if (isFirstSync) {
-                    const localData = localStorage.getItem(STORAGE_KEY);
-                    let mergedRaces = [...cloudRaces];
-                    let isMerged = false;
-
-                    if (localData) {
-                      try {
-                        const localRaces = JSON.parse(localData);
-                        if (Array.isArray(localRaces)) {
-                          localRaces.forEach(localRace => {
-                            // クラウドに存在しないレース（別端末で作ったもの）だけを追加
-                            if (!cloudRaces.some(cr => cr.id === localRace.id)) {
-                              mergedRaces.push(localRace);
-                              isMerged = true;
-                            }
-                          });
-                        }
-                      } catch(e) {}
-                    }
-
-                    if (isMerged) {
-                      // 合流させた新しいデータをクラウドに保存
-                      db.collection('users').doc(user.uid).set({ races: mergedRaces });
-                      setRaces(mergedRaces);
-                    } else {
-                      setRaces(cloudRaces);
-                    }
-                    isFirstSync = false;
-                  } else {
-                    // 2回目以降はそのまま反映
-                    setRaces(cloudRaces);
+              // 🌟 端末間データの賢いマージ（合流）処理 🌟
+              db.collection('users').doc(user.uid).get().then((doc) => {
+                let cloudRaces = [];
+                if (doc.exists) { cloudRaces = doc.data().races || []; }
+                
+                const localData = localStorage.getItem(STORAGE_KEY);
+                let localRaces = localData ? JSON.parse(localData) : [];
+                
+                let merged = false;
+                if (localRaces.length > 0) {
+                  // クラウドに存在しないローカル（この端末）のレースだけを抽出して追加
+                  const newRaces = localRaces.filter(lr => !cloudRaces.some(cr => cr.id === lr.id));
+                  if (newRaces.length > 0) {
+                    cloudRaces = [...newRaces, ...cloudRaces];
+                    merged = true;
                   }
-                  
-                } else {
-                  // クラウドが空の場合は、ローカルデータをアップロード
-                  const localData = localStorage.getItem(STORAGE_KEY);
-                  const initialRaces = localData ? JSON.parse(localData) : [];
-                  db.collection('users').doc(user.uid).set({ races: initialRaces });
-                  setRaces(initialRaces);
-                  isFirstSync = false;
                 }
+                
+                // 初回ログイン時、またはマージが発生した場合はクラウドを上書き更新
+                if (merged || !doc.exists) {
+                  db.collection('users').doc(user.uid).set({ races: cloudRaces }).catch(e => console.error(e));
+                }
+                
+                setRaces(cloudRaces);
+                // クラウドの最新状態をローカルにも常にバックアップ保存しておく（ログアウト対策）
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRaces));
                 setLoading(false);
-              }, (error) => {
+                
+                // リアルタイム同期の開始
+                db.collection('users').doc(user.uid).onSnapshot((snap) => {
+                  if (snap.exists) {
+                    const updatedRaces = snap.data().races || [];
+                    setRaces(updatedRaces);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRaces));
+                  }
+                });
+              }).catch((error) => {
                 alert("クラウドデータベースとの通信に失敗しました。");
                 setLoading(false);
               });
             } else {
-              // ログアウト状態
               const localData = localStorage.getItem(STORAGE_KEY);
               if (localData) { try { setRaces(JSON.parse(localData)); } catch(e){} }
               setLoading(false);
@@ -216,13 +198,11 @@
             }
           });
         } catch (e) {
-          alert("Firebaseの設定が間違っているか、ネットワークエラーです。");
           localStorage.removeItem(CONFIG_KEY);
           setLoading(false);
         }
       };
 
-// 🌟 スマホ・PWA対応のハイブリッドログイン 🌟
       const handleLoginClick = async () => {
         try {
           const config = JSON.parse(configInput);
@@ -230,18 +210,14 @@
           if (!firebase.apps.length) firebase.initializeApp(config);
           
           const provider = new firebase.auth.GoogleAuthProvider();
-          
-          // iPhoneの「ホーム画面アプリ」やスマホからのアクセスかを判定
           const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
           if (isStandalone || isMobile) {
-            // ホーム画面アプリ・スマホの場合は画面移動（リダイレクト）方式
             await firebase.auth().signInWithRedirect(provider);
           } else {
-            // パソコンの場合は小窓（ポップアップ）方式
             await firebase.auth().signInWithPopup(provider);
-            window.location.reload(); // 成功後に画面を更新してクラウドのデータを読み込む
+            window.location.reload();
           }
         } catch (e) {
           alert("ログイン処理に失敗しました。設定(JSON)が正しいか確認してください。");
@@ -249,13 +225,21 @@
       };
 
       const handleDisconnect = async () => {
-        if(window.confirm("連携を解除してローカル保存に戻りますか？\n※Google上のデータは消えません")) {
-          // 🌟 修正: 切断前に、クラウドの最新データをローカルに引き継いでおく 🌟
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(races));
-          
+        if(window.confirm("連携を解除してローカル保存に戻りますか？\n※iPhoneアプリ版では、再ログイン時に不具合が起きやすいため非推奨です。")) {
           try { if(firebase.apps.length > 0) await firebase.auth().signOut(); } catch(e) {}
           localStorage.removeItem(CONFIG_KEY);
           window.location.reload();
+        }
+      };
+
+      // 🌟 バグ修復用：Firebaseの認証キャッシュを強制削除する 🌟
+      const handleFixLoginCache = () => {
+        if(window.confirm("ログインシステムのキャッシュをリセットしますか？\n※これまでに作成したレース予想データは消えませんので安心してください。")) {
+          try {
+            indexedDB.deleteDatabase('firebaseLocalStorageDb');
+          } catch(e) { console.error(e); }
+          localStorage.removeItem(CONFIG_KEY);
+          alert("リセットが完了しました！\n\n【重要】この後、iPhoneの画面を上にスワイプしてアプリを「完全に終了」させてから、もう一度アプリを開いてログインをお試しください。");
         }
       };
 
@@ -318,31 +302,46 @@
 
       if (loading) return null;
 
-      const renderSettings = () => (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><CloudIcon className="text-blue-500" /> データ同期設定</h3>
-            {isCloudMode ? (
-              <div>
-                <div className="bg-blue-50 text-blue-900 p-4 rounded-xl mb-4 border border-blue-100 flex items-center gap-3 shadow-sm">
-                  <div className="bg-white p-2 rounded-full"><GoogleIcon size={24} /></div>
-                  <div>
-                    <p className="text-sm font-bold mb-0.5">Googleアカウントで同期中</p>
-                    <p className="text-xs opacity-70 truncate max-w-[200px]">{cloudUserRef.current?.displayName || cloudUserRef.current?.email || 'ログイン済み'}</p>
+const renderSettings = () => (
+        // 修正点1: 余白を調整し、背景の黒い部分(バックドロップ)のパディングをシンプルにする
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pt-safe pb-safe animate-fade-in">
+          {/* 修正点2: 高さを「最大で画面の85% (max-h-[85vh])」に指定し、潰れるのを防ぐ */}
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[85vh] flex flex-col">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 flex-shrink-0"><CloudIcon className="text-blue-500" /> データ同期設定</h3>
+            
+            {/* 修正点3: 中身のコンテンツエリアだけをスクロールさせる (flex-1 overflow-y-auto) */}
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+              {isCloudMode ? (
+                <div>
+                  <div className="bg-blue-50 text-blue-900 p-4 rounded-xl mb-4 border border-blue-100 flex items-center gap-3 shadow-sm">
+                    <div className="bg-white p-2 rounded-full"><GoogleIcon size={24} /></div>
+                    <div>
+                      <p className="text-sm font-bold mb-0.5">Googleアカウントで同期中</p>
+                      <p className="text-xs opacity-70 truncate max-w-[200px]">{cloudUserRef.current?.displayName || cloudUserRef.current?.email || 'ログイン済み'}</p>
+                    </div>
+                  </div>
+                  <button onClick={handleDisconnect} className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 mb-2">連携を解除する</button>
+                  <p className="text-[10px] text-gray-500 leading-tight">※iPhoneアプリ版では、一度解除すると再ログイン時に不具合が起きやすいため、頻繁なログアウトは非推奨です。</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs text-gray-600 mb-3 leading-relaxed">Firebaseの設定(JSON)を貼り付けると、Googleアカウントでのログイン画面が開き、データをクラウドに保存できます。</p>
+                  <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", ...}' className="w-full border border-gray-200 rounded-xl p-3 text-xs h-32 outline-none focus:border-green-600 bg-gray-50 mb-4 font-mono shadow-inner" />
+                  <button onClick={handleLoginClick} disabled={!configInput.trim()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl mb-2 disabled:opacity-50 hover:bg-blue-700"><GoogleIcon size={20} className="bg-white rounded-full p-0.5"/> Googleでログインして同期</button>
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-500 mb-2 font-bold">🛠️ トラブルシューティング</p>
+                    <p className="text-[10px] text-gray-400 mb-2 leading-tight">何度ログインしても同期されない場合、アプリ内にゴミデータが残ってエラーを起こしています。（※予想データは消えません）</p>
+                    <button onClick={handleFixLoginCache} className="w-full bg-gray-100 text-gray-600 text-xs font-bold py-2 rounded-lg hover:bg-gray-200">
+                      ログインキャッシュを修復する
+                    </button>
                   </div>
                 </div>
-                <button onClick={handleDisconnect} className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition-colors">連携を解除する</button>
-              </div>
-            ) : (
-              <div>
-                <p className="text-xs text-gray-600 mb-3 leading-relaxed">Firebaseの設定(JSON)を貼り付けると、Googleアカウントでのログイン画面が開き、データをクラウドに保存できます。</p>
-                <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", ...}' className="w-full border border-gray-200 rounded-xl p-3 text-xs h-32 outline-none focus:border-green-600 bg-gray-50 mb-4 font-mono shadow-inner" />
-                <button onClick={handleLoginClick} disabled={!configInput.trim()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl mb-2 disabled:opacity-50 hover:bg-blue-700 transition-colors">
-                  <GoogleIcon size={20} className="bg-white rounded-full p-0.5"/> Googleでログインして同期
-                </button>
-              </div>
-            )}
-            <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-2 hover:bg-gray-50 rounded-xl transition-colors">閉じる</button>
+              )}
+            </div>
+            
+            {/* 修正点4: 閉じるボタンはスクロールせず、常に一番下に固定する (flex-shrink-0) */}
+            <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-4 hover:bg-gray-50 rounded-xl border border-transparent flex-shrink-0">閉じる</button>
           </div>
         </div>
       );
@@ -355,8 +354,8 @@
             <div className="flex justify-between items-center mb-8 mt-2 md:mt-4">
               <h1 className="text-xl font-bold tracking-tight text-green-800 flex items-center gap-2"><Flag className="text-green-600" /> ウマメモ{isCloudMode && <CloudIcon className="text-blue-500" size={18} />}</h1>
               <div className="flex gap-2">
-                <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full bg-white shadow-sm border border-gray-100 transition-transform active:scale-95"><SettingsIcon size={18} /></button>
-                <button onClick={() => setIsAddingRace(true)} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-full shadow-sm flex items-center gap-1 text-sm font-medium transition-transform active:scale-95"><Plus size={16} /> 追加</button>
+                <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full bg-white shadow-sm border border-gray-100"><SettingsIcon size={18} /></button>
+                <button onClick={() => setIsAddingRace(true)} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-full shadow-sm flex items-center gap-1 text-sm font-medium"><Plus size={16} /> 追加</button>
               </div>
             </div>
 
@@ -464,7 +463,6 @@
       );
     }
     
-    // スクリプト読み込み完了時に待機画面を非表示にする
     const fallbackUi = document.getElementById('fallback-ui');
     if (fallbackUi) fallbackUi.style.display = 'none';
 
