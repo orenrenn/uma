@@ -222,31 +222,29 @@
         }
       };
 
+// 🌟 スマホ・PWA対応のハイブリッドログイン 🌟
       const handleLoginClick = async () => {
         try {
           const config = JSON.parse(configInput);
           localStorage.setItem(CONFIG_KEY, configInput);
           if (!firebase.apps.length) firebase.initializeApp(config);
           
-          const auth = firebase.auth();
           const provider = new firebase.auth.GoogleAuthProvider();
           
-          try {
-            // 1. まずポップアップでのログインを試みる
-            await auth.signInWithPopup(provider);
-            // 🌟 修正: 成功したら画面をリロードして、確実に同期処理（initCloud）を発動させる 🌟
-            window.location.reload();
-            
-          } catch(err) {
-            // 2. ポップアップがブロックされた場合は、リダイレクト方式でやり直す
-            if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
-               await auth.signInWithRedirect(provider);
-            } else if (err.code !== 'auth/popup-closed-by-user') {
-               alert("ログインエラー: " + err.message);
-            }
+          // iPhoneの「ホーム画面アプリ」やスマホからのアクセスかを判定
+          const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+          if (isStandalone || isMobile) {
+            // ホーム画面アプリ・スマホの場合は画面移動（リダイレクト）方式
+            await firebase.auth().signInWithRedirect(provider);
+          } else {
+            // パソコンの場合は小窓（ポップアップ）方式
+            await firebase.auth().signInWithPopup(provider);
+            window.location.reload(); // 成功後に画面を更新してクラウドのデータを読み込む
           }
         } catch (e) {
-          alert("正しいJSON形式で入力してください。");
+          alert("ログイン処理に失敗しました。設定(JSON)が正しいか確認してください。");
         }
       };
 
