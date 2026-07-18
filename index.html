@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="ウマメモ">
+  <meta name="apple-mobile-web-app-title" content="予想メモ">
   <meta name="mobile-web-app-capable" content="yes">
   
   <title>競馬予想・ウマメモ</title>
@@ -145,7 +145,6 @@
         setRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).filter(h => h.id !== horseId) } : r));
       };
 
-      // 🌟 解析ルールの強化（騎手名の除外など） 🌟
       const handleParseImport = () => {
         if (!importText.trim() || !activeRaceId) return;
         let newHorsesList = [];
@@ -156,7 +155,6 @@
           let normalizedLine = line.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).trim();
           if(!normalizedLine) return;
 
-          // 【追加対策】斤量の数字（例：(52.0)）や「M.デムーロ」のような英字＋ドットが含まれる行は騎手の行と判断して無視！
           if (normalizedLine.match(/\(\d{2}\.\d\)/) || normalizedLine.match(/[a-zA-Z]\./)) {
             return; 
           }
@@ -164,7 +162,6 @@
           const ignoreWords = ['ブリンカー', 'カクチ', 'カクガイ', 'マルガイ', 'マルチ', 'カク地', 'マル地', 'マル外', 'カク外'];
           ignoreWords.forEach(word => { normalizedLine = normalizedLine.replace(new RegExp(word, 'g'), '').trim(); });
 
-          // 【追加対策】JRAの馬名は2文字〜最大9文字というルールを適用して長すぎるものを弾く
           const nameMatch = normalizedLine.match(/([ァ-ヴー・]{2,9})/);
           
           if (nameMatch) {
@@ -239,7 +236,7 @@
           <div className="max-w-xl mx-auto p-4 animate-fade-in pt-safe pb-safe">
             <div className="flex justify-between items-center mb-8 mt-2 md:mt-4">
               <h1 className="text-xl font-bold tracking-tight text-green-800 flex items-center gap-2">
-                <Flag className="text-green-600" /> ケシウマメモ
+                <Flag className="text-green-600" /> ウマメモ
               </h1>
               <button onClick={() => setIsAddingRace(true)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-sm flex items-center gap-1 text-sm font-medium transition-transform active:scale-95">
                 <Plus size={16} /> レース追加
