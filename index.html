@@ -286,6 +286,7 @@
       const [copyStatus, setCopyStatus] = useState('');
       const [isSettingsOpen, setIsSettingsOpen] = useState(false);
       const [configInput, setConfigInput] = useState(localStorage.getItem(CONFIG_KEY) || '');
+      const [importBalanceText, setImportBalanceText] = useState('');
 
       const [betType, setBetType] = useState('単勝');
       const [betMethod, setBetMethod] = useState('normal'); // 'normal', 'box', 'formation'
@@ -565,6 +566,56 @@
         setImportText('');
       };
 
+      const handleImportBalance = () => {
+        if (!importBalanceText.trim()) return;
+        const lines = importBalanceText.split('\n');
+        const importedRaces = [];
+        
+        lines.forEach(line => {
+          const row = line.trim();
+          if (!row) return;
+          
+          const parts = row.split(/\t|\s{2,}/);
+          if (parts.length < 2) return;
+          
+          let dateStr = parts[0].trim();
+          let nameStr = parts[1].trim();
+          let investStr = parts[2] ? parts[2].trim() : '0';
+          let payoutStr = parts[3] ? parts[3].trim() : '0';
+          
+          dateStr = dateStr.replace(/\//g, '-');
+          if (dateStr.match(/^\d{2}-\d{2}-\d{2}$/)) {
+            dateStr = '20' + dateStr;
+          }
+          if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            dateStr = getTodayStr();
+          }
+          
+          const investment = parseInt(investStr.replace(/,/g, '').replace(/円/g, '')) || 0;
+          const payout = parseInt(payoutStr.replace(/,/g, '').replace(/円/g, '')) || 0;
+          
+          importedRaces.push({
+            id: generateId(),
+            name: nameStr,
+            date: dateStr,
+            horses: [],
+            bets: [],
+            result: { first: '', second: '', third: '' },
+            investment: investment,
+            payout: payout
+          });
+        });
+        
+        if (importedRaces.length > 0) {
+          updateRaces(prev => [...importedRaces, ...(Array.isArray(prev) ? prev : [])]);
+          alert(`${importedRaces.length}件の過去収支をインポートしました！`);
+          setImportBalanceText('');
+          setIsSettingsOpen(false);
+        } else {
+          alert("インポート可能なデータが解析できませんでした。\nスプレッドシートから [日付, レース名, 購入額, 払戻額] の列範囲をコピペしてください。");
+        }
+      };
+
       const handleCopyResult = (race) => {
         const horses = Array.isArray(race.horses) ? race.horses : [];
         const markedHorses = horses.filter(h => h.mark !== '-' && h.mark !== '消').sort((a, b) => MARK_ORDER[a.mark] - MARK_ORDER[b.mark]);
@@ -611,6 +662,28 @@
                   </div>
                 </div>
               )}
+
+              {/* 過去の収支データ一括取り込み */}
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-800 mb-1 flex items-center gap-1.5">📊 過去収支の一括取り込み</p>
+                <p className="text-[10px] text-gray-400 mb-2 leading-tight">
+                  スプレッドシートから [日付, レース名, 購入額, 払戻額] の列範囲をコピペし、以下に貼り付けて取り込みボタンを押してください。
+                </p>
+                <textarea 
+                  value={importBalanceText} 
+                  onChange={e => setImportBalanceText(e.target.value)} 
+                  placeholder={"2026/07/19\t函館2歳S\t1000\t2500\n2026/07/18\t函館記念\t500\t0"}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-[11px] h-20 outline-none focus:border-green-600 bg-gray-50 mb-2 shadow-inner font-mono whitespace-pre" 
+                />
+                {importBalanceText.trim() && (
+                  <button 
+                    onClick={handleImportBalance} 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition-colors animate-fade-in"
+                  >
+                    収支データを取り込む
+                  </button>
+                )}
+              </div>
             </div>
             
             <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-4 hover:bg-gray-50 rounded-xl border border-transparent flex-shrink-0">閉じる</button>
