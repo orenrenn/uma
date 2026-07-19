@@ -572,6 +572,11 @@
             const balB = (b.payout || 0) - (b.investment || 0);
             return balB - balA;
           }
+          if (raceSortOption === 'balance-asc') {
+            const balA = (a.payout || 0) - (a.investment || 0);
+            const balB = (b.payout || 0) - (b.investment || 0);
+            return balA - balB;
+          }
           return 0;
         });
 
@@ -701,6 +706,7 @@
                     <option value="date-asc">レース日 (古い順)</option>
                     <option value="name-asc">レース名 (五十音順)</option>
                     <option value="balance-desc">収支 (高い順)</option>
+                    <option value="balance-asc">収支 (低い順)</option>
                   </select>
                 </div>
 
