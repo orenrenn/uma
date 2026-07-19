@@ -1017,6 +1017,7 @@
       const currentHorses = Array.isArray(activeRace.horses) ? activeRace.horses : [];
       let filteredAndSorted = currentHorses.filter(horse => { 
         if (filter === 'all') return true; 
+        if (filter === 'marked_paddock') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark) || horse.paddockGood === true;
         if (filter === 'marked') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark); 
         if (filter === 'keshi') return horse.mark === '消'; 
         return true; 
@@ -1594,6 +1595,7 @@
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
                   <div className="flex gap-1 text-xs font-bold">
                     <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>全頭</button>
+                    <button onClick={() => setFilter('marked_paddock')} className={`px-3 py-2 rounded-lg transition-colors ${filter === 'marked_paddock' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印/パドック</button>
                     <button onClick={() => setFilter('marked')} className={`px-3 py-2 rounded-lg transition-colors ${filter === 'marked' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印のみ</button>
                     <button onClick={() => setFilter('keshi')} className={`px-3 py-2 rounded-lg transition-colors ${filter === 'keshi' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>消のみ</button>
                   </div>
