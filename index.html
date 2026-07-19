@@ -188,15 +188,25 @@
     };
 
     const normalizeHorses = (horses) => {
-      if (!Array.isArray(horses)) return [[], [], []];
-      if (Array.isArray(horses[0])) {
+      if (!horses) return [[], [], []];
+      if (typeof horses === 'object' && !Array.isArray(horses)) {
+        return [
+          Array.isArray(horses.sel1) ? horses.sel1 : [],
+          Array.isArray(horses.sel2) ? horses.sel2 : [],
+          Array.isArray(horses.sel3) ? horses.sel3 : []
+        ];
+      }
+      if (Array.isArray(horses) && Array.isArray(horses[0])) {
         return [
           Array.isArray(horses[0]) ? horses[0] : [],
           Array.isArray(horses[1]) ? horses[1] : [],
           Array.isArray(horses[2]) ? horses[2] : []
         ];
       }
-      return [horses, [], []];
+      if (Array.isArray(horses)) {
+        return [horses, [], []];
+      }
+      return [[], [], []];
     };
 
     const ensureRaceSchema = (raceList) => {
@@ -219,7 +229,7 @@
               ...b,
               type: b.type || '単勝',
               method: b.method || 'normal',
-              horses: Array.isArray(b.horses) ? b.horses : [],
+              horses: b.horses || { sel1: [], sel2: [], sel3: [] },
               amountPerBet: amt,
               combinationCount: combCount,
               totalAmount: totalAmt
@@ -309,16 +319,6 @@
           const auth = firebase.auth();
           const db = firebase.firestore();
 
-          // iOS PWA（ホーム画面追加）環境の場合はリダイレクトログイン結果を安全に回収する
-          const isIOSPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-          if (isIOSPWA) {
-            await auth.getRedirectResult().catch(e => {
-              if (e.code !== 'auth/cancelled-popup-request') {
-                console.error("PWA redirect result error: ", e);
-              }
-            });
-          }
-
           auth.onAuthStateChanged((user) => {
             if (user) {
               cloudModeRef.current = true;
@@ -385,17 +385,10 @@
           
           const provider = new firebase.auth.GoogleAuthProvider();
           
-          // iOS PWA（ホーム画面追加）環境の場合はリダイレクト方式を使い、それ以外はポップアップ方式を使う
-          const isIOSPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-          if (isIOSPWA) {
-            await firebase.auth().signInWithRedirect(provider);
-          } else {
-            await firebase.auth().signInWithPopup(provider);
-            window.location.reload();
-          }
+          await firebase.auth().signInWithPopup(provider);
+          window.location.reload();
           
         } catch (e) {
-          // PWA環境で自動的に発生するcancelled-popup-requestなどの不要なエラーを表示しない
           if (e.code !== 'auth/cancelled-popup-request') {
             alert("ログイン開始エラー: " + e.message);
           }
@@ -468,7 +461,7 @@
           id: generateId(),
           type: betType,
           method: betMethod,
-          horses: [ [...betSel1], [...betSel2], [...betSel3] ],
+          horses: { sel1: [...betSel1], sel2: [...betSel2], sel3: [...betSel3] },
           amountPerBet: amount,
           combinationCount: count,
           totalAmount: totalAmount
