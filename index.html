@@ -960,10 +960,14 @@
                       <label className="text-xs text-gray-400 font-bold block mb-1">購入金額 (円)</label>
                       <input 
                         type="number" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={activeRace.investment || ''} 
                         onChange={e => handleUpdateRaceBalance(activeRace.id, e.target.value, activeRace.payout || 0)} 
                         className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-green-600 bg-white font-bold text-gray-700 text-sm"
                         placeholder="0"
+                        min="0"
+                        step="100"
                       />
                       {totalBetsAmount > 0 && (
                         <p className="text-[10px] text-gray-400 mt-1">※買い目合計: {totalBetsAmount.toLocaleString()}円</p>
@@ -973,10 +977,14 @@
                       <label className="text-xs text-gray-400 font-bold block mb-1">払戻金額 (円)</label>
                       <input 
                         type="number" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={activeRace.payout || ''} 
                         onChange={e => handleUpdateRaceBalance(activeRace.id, activeRace.investment || 0, e.target.value)} 
                         className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-green-600 bg-white font-bold text-gray-700 text-sm"
                         placeholder="0"
+                        min="0"
+                        step="10"
                       />
                     </div>
                   </div>
@@ -1132,6 +1140,8 @@
                     <div className="flex gap-2 mb-2">
                       <input 
                         type="number" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={betAmountPerBet || ''} 
                         onChange={e => setBetAmountPerBet(e.target.value)} 
                         className="w-28 border border-gray-200 rounded-xl p-2 text-center text-sm font-bold outline-none focus:border-green-600 bg-gray-50"
@@ -1142,16 +1152,23 @@
                       <span className="self-center font-bold text-gray-500 text-xs">円</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-                      {[100, 300, 500, 1000, 5000, 10000].map(amt => (
+                      {[100, 300, 500, 1000, 5000].map(amt => (
                         <button
                           key={amt}
                           type="button"
-                          onClick={() => setBetAmountPerBet(amt)}
+                          onClick={() => setBetAmountPerBet(prev => (parseInt(prev) || 0) + amt)}
                           className="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
                         >
-                          {amt.toLocaleString()}円
+                          +{amt.toLocaleString()}円
                         </button>
                       ))}
+                      <button
+                        type="button"
+                        onClick={() => setBetAmountPerBet('')}
+                        className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors ml-auto"
+                      >
+                        クリア
+                      </button>
                     </div>
                   </div>
 
