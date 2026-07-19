@@ -91,7 +91,7 @@
     ];
     const MARK_ORDER = { '◎': 1, '〇': 2, '▲': 3, '△': 4, '☆': 5, '消': 6, '-': 7 };
 
-    const getBetCombinationCount = (type, method, sel1 = [], sel2 = [], sel3 = []) => {
+    const getBetCombinationCount = (type, method, sel1 = [], sel2 = [], sel3 = [], nagashiAnchorCount = 1, isMulti = false) => {
       if (type === '単勝' || type === '複勝') {
         return sel1.length;
       }
@@ -184,6 +184,59 @@
         }
       }
 
+      if (method === 'nagashi') {
+        const s1 = sel1;
+        const s2 = sel2;
+        const s3 = sel3;
+
+        if (type === '馬連' || type === 'ワイド' || type === '枠連' || type === '馬単') {
+          const anchor = s1[0];
+          if (!anchor) return 0;
+          let count = 0;
+          s2.forEach(partner => {
+            if (partner === anchor) return;
+            count++;
+          });
+          if (type === '馬単' && isMulti) return count * 2;
+          return count;
+        }
+
+        if (type === '3連複') {
+          if (nagashiAnchorCount === 1) {
+            const anchor = s1[0];
+            if (!anchor) return 0;
+            const partners = s2.filter(h => h !== anchor);
+            const n = partners.length;
+            return n >= 2 ? (n * (n - 1)) / 2 : 0;
+          } else {
+            const anchor1 = s1[0];
+            const anchor2 = s2[0];
+            if (!anchor1 || !anchor2 || anchor1 === anchor2) return 0;
+            const partners = s3.filter(h => h !== anchor1 && h !== anchor2);
+            return partners.length;
+          }
+        }
+
+        if (type === '3連単') {
+          if (nagashiAnchorCount === 1) {
+            const anchor = s1[0];
+            if (!anchor) return 0;
+            const partners = s2.filter(h => h !== anchor);
+            const n = partners.length;
+            if (n < 2) return 0;
+            return isMulti ? n * (n - 1) * 3 : n * (n - 1);
+          } else {
+            const anchor1 = s1[0];
+            const anchor2 = s2[0];
+            if (!anchor1 || !anchor2 || anchor1 === anchor2) return 0;
+            const partners = s3.filter(h => h !== anchor1 && h !== anchor2);
+            const n = partners.length;
+            if (n < 1) return 0;
+            return isMulti ? n * 6 : n * 2;
+          }
+        }
+      }
+
       return 0;
     };
 
@@ -232,7 +285,9 @@
               horses: b.horses || { sel1: [], sel2: [], sel3: [] },
               amountPerBet: amt,
               combinationCount: combCount,
-              totalAmount: totalAmt
+              totalAmount: totalAmt,
+              multi: typeof b.multi === 'boolean' ? b.multi : false,
+              anchorCount: typeof b.anchorCount === 'number' ? b.anchorCount : 1
             };
           }) : [],
           result: r.result && typeof r.result === 'object' ? {
@@ -289,16 +344,20 @@
       const [importBalanceText, setImportBalanceText] = useState('');
 
       const [betType, setBetType] = useState('単勝');
-      const [betMethod, setBetMethod] = useState('normal'); // 'normal', 'box', 'formation'
+      const [betMethod, setBetMethod] = useState('normal'); // 'normal', 'box', 'formation', 'nagashi'
       const [betSel1, setBetSel1] = useState([]);
       const [betSel2, setBetSel2] = useState([]);
       const [betSel3, setBetSel3] = useState([]);
       const [betAmountPerBet, setBetAmountPerBet] = useState(100);
+      const [betNagashiAnchorCount, setBetNagashiAnchorCount] = useState(1); // 1 or 2
+      const [betMulti, setBetMulti] = useState(false);
 
       useEffect(() => {
         setBetSel1([]);
         setBetSel2([]);
         setBetSel3([]);
+        setBetNagashiAnchorCount(1);
+        setBetMulti(false);
       }, [betType, betMethod]);
 
       useEffect(() => {
@@ -459,7 +518,7 @@
 
       const handleAddBet = (raceId, e) => {
         if (e) e.preventDefault();
-        const count = getBetCombinationCount(betType, betMethod, betSel1, betSel2, betSel3);
+        const count = getBetCombinationCount(betType, betMethod, betSel1, betSel2, betSel3, betNagashiAnchorCount, betMulti);
         if (count <= 0) {
           alert('買い目が1点以上になるように選択してください。');
           return;
@@ -473,7 +532,9 @@
           horses: { sel1: [...betSel1], sel2: [...betSel2], sel3: [...betSel3] },
           amountPerBet: amount,
           combinationCount: count,
-          totalAmount: totalAmount
+          totalAmount: totalAmount,
+          multi: betMulti,
+          anchorCount: betNagashiAnchorCount
         };
 
         updateRaces(prev => prev.map(r => {
@@ -993,7 +1054,7 @@
         }
       };
 
-      const combinationCount = getBetCombinationCount(betType, betMethod, betSel1, betSel2, betSel3);
+      const combinationCount = getBetCombinationCount(betType, betMethod, betSel1, betSel2, betSel3, betNagashiAnchorCount, betMulti);
       const totalAmountPreview = combinationCount * (parseInt(betAmountPerBet) || 0);
 
       const formatBetHorses = (bet) => {
@@ -1011,6 +1072,17 @@
         
         if (method === 'box') {
           return `${h1.join(', ')} (ボックス)`;
+        }
+
+        if (method === 'nagashi') {
+          const multiSuffix = bet.multi ? ' (マルチ)' : '';
+          if (type === '3連複' || type === '3連単') {
+            if (bet.anchorCount === 2) {
+              return `軸: ${h1[0] || '-'}, ${h2[0] || '-'} ➔ 相手: ${h3.join(', ')}${multiSuffix}`;
+            }
+            return `軸: ${h1[0] || '-'} ➔ 相手: ${h2.join(', ')}${multiSuffix}`;
+          }
+          return `軸: ${h1[0] || '-'} ➔ 相手: ${h2.join(', ')}${multiSuffix}`;
         }
         
         if (type === '単勝' || type === '複勝') {
@@ -1080,6 +1152,47 @@
             </span>
           );
         };
+
+        if (method === 'nagashi') {
+          const isMulti = bet.multi;
+          const multiBadge = isMulti ? <span className="text-[10px] text-red-600 bg-red-50 border border-red-100 rounded px-1 font-bold ml-1">マルチ</span> : null;
+          if (type === '3連複' || type === '3連単') {
+            if (bet.anchorCount === 2) {
+              return (
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-xs text-gray-400 font-normal mr-0.5">軸:</span>
+                  {formatHorseNum(h1[0])}
+                  <span className="text-gray-300 font-normal mx-0.5">,</span>
+                  {formatHorseNum(h2[0])}
+                  <span className="text-gray-300 font-normal mx-0.5">➔</span>
+                  <span className="text-xs text-gray-400 font-normal mr-0.5">相手:</span>
+                  {renderGroup(h3)}
+                  {multiBadge}
+                </div>
+              );
+            }
+            return (
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-xs text-gray-400 font-normal mr-0.5">軸:</span>
+                {formatHorseNum(h1[0])}
+                <span className="text-gray-300 font-normal mx-0.5">➔</span>
+                <span className="text-xs text-gray-400 font-normal mr-0.5">相手:</span>
+                {renderGroup(h2)}
+                {multiBadge}
+              </div>
+            );
+          }
+          return (
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-xs text-gray-400 font-normal mr-0.5">軸:</span>
+              {formatHorseNum(h1[0])}
+              <span className="text-gray-300 font-normal mx-0.5">➔</span>
+              <span className="text-xs text-gray-400 font-normal mr-0.5">相手:</span>
+              {renderGroup(h2)}
+              {multiBadge}
+            </div>
+          );
+        }
 
         if (method === 'box') {
           return (
@@ -1188,6 +1301,15 @@
                 combinations.push({ text: `${a} - ${b}`, isHit });
               });
             });
+          } else if (method === 'nagashi') {
+            const anchor = h1[0];
+            if (anchor) {
+              h2.forEach(b => {
+                if (anchor === b) return;
+                const isHit = first && second && sortNums(anchor, b) === sortNums(first, second);
+                combinations.push({ text: `${anchor} - ${b}`, isHit });
+              });
+            }
           } else {
             const a = h1[0];
             const b = h2[0];
@@ -1215,12 +1337,26 @@
                 combinations.push({ text: `${a} → ${b}`, isHit });
               });
             });
+          } else if (method === 'nagashi') {
+            const anchor = h1[0];
+            const isMulti = bet.multi;
+            if (anchor) {
+              h2.forEach(b => {
+                if (anchor === b) return;
+                const isHitOmote = first && second && first === anchor && second === b;
+                combinations.push({ text: `${anchor} → ${b}`, isHit: isHitOmote });
+                if (isMulti) {
+                  const isHitUra = first && second && first === b && second === anchor;
+                  combinations.push({ text: `${b} → ${anchor}`, isHit: isHitUra });
+                }
+              });
+            }
           } else {
             const a = h1[0];
             const b = h2[0];
             if (a && b) {
               const isHit = first && second && first === a && second === b;
-              combinations.push({ text: `${a} → ${b}`, isHit });
+              combinations.push({ text: `${a} → ${b}`, isHit: isHit });
             }
           }
         } else if (type === '3連複') {
@@ -1251,6 +1387,31 @@
                 });
               });
             });
+          } else if (method === 'nagashi') {
+            if (bet.anchorCount === 2) {
+              const a = h1[0];
+              const b = h2[0];
+              if (a && b && a !== b) {
+                h3.forEach(c => {
+                  if (a === c || b === c) return;
+                  const isHit = first && second && third && sortNums(a, b, c) === sortNums(first, second, third);
+                  combinations.push({ text: `${a} - ${b} - ${c}`, isHit });
+                });
+              }
+            } else {
+              const a = h1[0];
+              if (a) {
+                const partners = h2.filter(h => h !== a);
+                for (let i = 0; i < partners.length; i++) {
+                  for (let j = i + 1; j < partners.length; j++) {
+                    const b = partners[i];
+                    const c = partners[j];
+                    const isHit = first && second && third && sortNums(a, b, c) === sortNums(first, second, third);
+                    combinations.push({ text: `${a} - ${b} - ${c}`, isHit });
+                  }
+                }
+              }
+            }
           } else {
             const a = h1[0];
             const b = h2[0];
@@ -1286,6 +1447,51 @@
                 });
               });
             });
+          } else if (method === 'nagashi') {
+            const isMulti = bet.multi;
+            if (bet.anchorCount === 2) {
+              const a = h1[0];
+              const b = h2[0];
+              if (a && b && a !== b) {
+                h3.forEach(c => {
+                  if (a === c || b === c) return;
+                  const patterns = isMulti 
+                    ? [
+                        [a, b, c], [a, c, b], [c, a, b],
+                        [b, a, c], [b, c, a], [c, b, a]
+                      ]
+                    : [[a, b, c], [b, a, c]];
+                  
+                  patterns.forEach(([p1, p2, p3]) => {
+                    const isHit = first && second && third && first === p1 && second === p2 && third === p3;
+                    combinations.push({ text: `${p1} → ${p2} → ${p3}`, isHit });
+                  });
+                });
+              }
+            } else {
+              const a = h1[0];
+              if (a) {
+                const partners = h2.filter(h => h !== a);
+                for (let i = 0; i < partners.length; i++) {
+                  for (let j = 0; j < partners.length; j++) {
+                    if (i === j) continue;
+                    const b = partners[i];
+                    const c = partners[j];
+                    
+                    const patterns = isMulti
+                      ? [
+                          [a, b, c], [b, a, c], [b, c, a]
+                        ]
+                      : [[a, b, c]];
+                      
+                    patterns.forEach(([p1, p2, p3]) => {
+                      const isHit = first && second && third && first === p1 && second === p2 && third === p3;
+                      combinations.push({ text: `${p1} → ${p2} → ${p3}`, isHit });
+                    });
+                  }
+                }
+              }
+            }
           } else {
             const a = h1[0];
             const b = h2[0];
@@ -1444,15 +1650,15 @@
                   {betType !== '単勝' && betType !== '複勝' && (
                     <div>
                       <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
-                      <div className="flex gap-2 text-xs font-bold">
-                        {['normal', 'box', 'formation'].map(m => {
-                          const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : 'フォーメーション';
+                      <div className="grid grid-cols-4 gap-1.5 text-xs font-bold">
+                        {['normal', 'box', 'formation', 'nagashi'].map(m => {
+                          const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメ' : '流し';
                           return (
                             <button 
                               key={m} 
                               type="button" 
                               onClick={() => setBetMethod(m)} 
-                              className={`flex-1 py-2 rounded-lg border text-center transition-colors ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                              className={`py-2 rounded-lg border text-center transition-colors ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                             >
                               {label}
                             </button>
@@ -1468,7 +1674,128 @@
                       {betType === '枠連' ? '枠番号' : '馬番号'} の選択
                     </span>
 
-                    {(betMethod === 'box' || betType === '単勝' || betType === '複勝') ? (
+                    {betMethod === 'nagashi' ? (
+                      <div className="space-y-4">
+                        {(betType === '3連複' || betType === '3連単') && (
+                          <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                            <span className="text-[11px] text-gray-500 font-bold">軸頭数</span>
+                            <div className="flex gap-1 text-[10px] font-bold">
+                              {[1, 2].map(num => (
+                                <button
+                                  key={num}
+                                  type="button"
+                                  onClick={() => {
+                                    setBetNagashiAnchorCount(num);
+                                    setBetSel1([]);
+                                    setBetSel2([]);
+                                    setBetSel3([]);
+                                  }}
+                                  className={`px-3 py-1.5 rounded-lg border transition-colors ${betNagashiAnchorCount === num ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                >
+                                  軸{num}頭
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {(betType === '馬単' || betType === '3連単') && (
+                          <label className="flex items-center gap-2 bg-red-50/50 p-2.5 rounded-xl border border-red-100/50 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={betMulti} 
+                              onChange={e => setBetMulti(e.target.checked)} 
+                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" 
+                            />
+                            <span className="text-[11px] font-bold text-red-700">マルチで購入する（軸と相手の着順を入れ替えた組み合わせも全て購入）</span>
+                          </label>
+                        )}
+
+                        {(() => {
+                          const isThree = betType === '3連複' || betType === '3連単';
+                          const isAnchor2 = isThree && betNagashiAnchorCount === 2;
+                          const rows = isAnchor2
+                            ? [
+                                { label: '軸馬 1 (1頭のみ選択)', sel: betSel1, setSel: setBetSel1, isSingle: true },
+                                { label: '軸馬 2 (1頭のみ選択)', sel: betSel2, setSel: setBetSel2, isSingle: true },
+                                { label: '相手馬 (複数選択可)', sel: betSel3, setSel: setBetSel3, isSingle: false }
+                              ]
+                            : [
+                                { label: '軸馬 (1頭のみ選択)', sel: betSel1, setSel: setBetSel1, isSingle: true },
+                                { label: '相手馬 (複数選択可)', sel: betSel2, setSel: setBetSel2, isSingle: false }
+                              ];
+
+                          return rows.map((row, idx) => (
+                            <div key={idx} className="border-t border-gray-100 pt-3 first:border-0 first:pt-0">
+                              <span className="text-[11px] text-gray-400 font-bold block mb-1.5">{row.label}</span>
+                              <div className="flex flex-wrap gap-2">
+                                {betType === '枠連' ? (
+                                  [1, 2, 3, 4, 5, 6, 7, 8].map(waku => {
+                                    const wStr = String(waku);
+                                    const isSelected = row.sel.includes(wStr);
+                                    return (
+                                      <button
+                                        key={waku}
+                                        type="button"
+                                        onClick={() => {
+                                          if (row.isSingle) {
+                                            row.setSel(isSelected ? [] : [wStr]);
+                                          } else {
+                                            row.setSel(isSelected ? row.sel.filter(v => v !== wStr) : [...row.sel, wStr]);
+                                          }
+                                        }}
+                                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${isSelected ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
+                                      >
+                                        {waku}
+                                      </button>
+                                    );
+                                  })
+                                ) : (
+                                  currentHorses.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
+                                  ) : (
+                                    currentHorses.map(h => {
+                                      const val = h.number || h.name;
+                                      const isSelected = row.sel.includes(val);
+                                      return (
+                                        <button
+                                          key={h.id}
+                                          type="button"
+                                          onClick={() => {
+                                            if (row.isSingle) {
+                                              if (isAnchor2) {
+                                                if (idx === 0 && betSel2.includes(val)) {
+                                                  alert("同じ馬を両方の軸に指定することはできません。");
+                                                  return;
+                                                }
+                                                if (idx === 1 && betSel1.includes(val)) {
+                                                  alert("同じ馬を両方の軸に指定することはできません。");
+                                                  return;
+                                                }
+                                              }
+                                              row.setSel(isSelected ? [] : [val]);
+                                            } else {
+                                              if (betSel1.includes(val) || (isAnchor2 && betSel2.includes(val))) {
+                                                alert("軸に指定されている馬は相手に選択できません。");
+                                                return;
+                                              }
+                                              row.setSel(isSelected ? row.sel.filter(v => v !== val) : [...row.sel, val]);
+                                            }
+                                          }}
+                                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                                        >
+                                          {h.number ? `${h.number}.` : ''}{h.name} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                        </button>
+                                      );
+                                    })
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    ) : (betMethod === 'box' || betType === '単勝' || betType === '複勝') ? (
                       <div className="flex flex-wrap gap-2">
                         {betType === '枠連' ? (
                           [1, 2, 3, 4, 5, 6, 7, 8].map(waku => (
