@@ -294,11 +294,6 @@
           if (!firebase.apps.length) firebase.initializeApp(config);
           const auth = firebase.auth();
           const db = firebase.firestore();
-          
-          // エラーが発生した場合に画面に詳細を表示する（原因特定のため）
-          await auth.getRedirectResult().catch(e => {
-            alert("【ログイン通信エラー】\n" + e.message + "\n\n通信がブロックされました。「キャッシュの完全修復」をお試しください。");
-          });
 
           auth.onAuthStateChanged((user) => {
             if (user) {
