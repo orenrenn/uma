@@ -361,8 +361,16 @@
                   }
                 });
               }).catch((error) => {
-                alert("データベースの読み込みに失敗しました。");
+                console.error("Firestore get() error:", error);
+                // オフライン状態等でDB取得に失敗した場合でも、ローカルキャッシュを読み込んでアプリの起動を妨げない
+                const localData = localStorage.getItem(STORAGE_KEY);
+                if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch(e){} }
                 setLoading(false);
+                
+                // 一時的な接続エラー(offlineやunavailable)以外の場合のみ警告を表示する
+                if (error.code !== 'unavailable' && error.message.indexOf('offline') === -1) {
+                  alert("データベースの読み込みに失敗しました。\n詳細: " + error.message);
+                }
               });
             } else {
               const localData = localStorage.getItem(STORAGE_KEY);
