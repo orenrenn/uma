@@ -212,8 +212,9 @@
           })) : [],
           bets: Array.isArray(r.bets) ? r.bets.map(b => {
             if (!b || typeof b !== 'object') return b;
-            const combCount = typeof b.combinationCount === 'number' ? b.combinationCount : 1;
-            const amt = typeof b.amountPerBet === 'number' ? b.amountPerBet : 0;
+            const combCount = (typeof b.combinationCount === 'number' && !isNaN(b.combinationCount)) ? b.combinationCount : 1;
+            const amt = (typeof b.amountPerBet === 'number' && !isNaN(b.amountPerBet)) ? b.amountPerBet : 0;
+            const totalAmt = (typeof b.totalAmount === 'number' && b.totalAmount !== null && !isNaN(b.totalAmount)) ? b.totalAmount : (combCount * amt);
             return {
               ...b,
               type: b.type || '単勝',
@@ -221,7 +222,7 @@
               horses: Array.isArray(b.horses) ? b.horses : [],
               amountPerBet: amt,
               combinationCount: combCount,
-              totalAmount: typeof b.totalAmount === 'number' ? b.totalAmount : (combCount * amt)
+              totalAmount: totalAmt
             };
           }) : [],
           result: r.result && typeof r.result === 'object' ? {
@@ -461,13 +462,14 @@
           alert('買い目が1点以上になるように選択してください。');
           return;
         }
-        const totalAmount = count * (parseInt(betAmountPerBet) || 0);
+        const amount = parseInt(betAmountPerBet) || 0;
+        const totalAmount = count * amount;
         const newBet = {
           id: generateId(),
           type: betType,
           method: betMethod,
           horses: [ [...betSel1], [...betSel2], [...betSel3] ],
-          amountPerBet: parseInt(betAmountPerBet) || 0,
+          amountPerBet: amount,
           combinationCount: count,
           totalAmount: totalAmount
         };
@@ -1239,7 +1241,7 @@
           text += `【買い目内訳】\n`;
           bets.forEach(b => {
             const methodLabel = b.method === 'normal' ? '通常' : b.method === 'box' ? 'ボックス' : 'フォーメーション';
-            text += `・${b.type} ${methodLabel} (${b.combinationCount}点 × 各${b.amountPerBet}円) = ${b.totalAmount.toLocaleString()}円\n`;
+            text += `・${b.type} ${methodLabel} (${b.combinationCount}点 × 各${b.amountPerBet}円) = ${(b.totalAmount || 0).toLocaleString()}円\n`;
             text += `  ${formatBetHorses(b)}\n`;
           });
         } else {
@@ -1571,7 +1573,7 @@
                               </div>
                               <div className="text-right flex-shrink-0 flex items-center gap-2">
                                 <span className="text-sm font-extrabold text-gray-800 mr-1">
-                                  {bet.totalAmount.toLocaleString()}円
+                                  {(bet.totalAmount || 0).toLocaleString()}円
                                 </span>
                                 <button 
                                   type="button"
