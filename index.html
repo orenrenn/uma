@@ -1558,19 +1558,19 @@
 
       return (
         <div className="max-w-xl mx-auto animate-fade-in bg-white min-h-screen pb-32">
-          <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between pt-safe">
+          <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between pt-safe relative">
             <button 
               onClick={() => {setActiveRaceId(null); setFilter('all'); setSortType('number'); setRaceDetailTab('predict');}} 
-              className="flex items-center gap-1 p-1.5 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              className="flex items-center gap-1 p-1.5 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors z-10"
             >
               <ChevronLeft size={22} />
               <Flag className="text-green-600 flex-shrink-0" size={16} />
               <span className="text-[11px] font-extrabold text-green-800 tracking-tight hidden min-[390px]:inline">ウマメモ</span>
             </button>
-            <div className="flex-1 text-center min-w-0 px-2"><h2 className="text-sm font-bold text-gray-900 truncate">{activeRace.name}</h2></div>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[50%] text-center min-w-0"><h2 className="text-sm font-bold text-gray-900 truncate">{activeRace.name}</h2></div>
             <button 
               onClick={() => raceDetailTab === 'predict' ? handleCopyResult(activeRace) : handleCopyBets(activeRace)} 
-              className="p-2 -mr-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full relative group"
+              className="p-2 -mr-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full relative group z-10"
             >
               <CopyIcon size={20} />
               {copyStatus && <span className="absolute top-10 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">{copyStatus}</span>}
