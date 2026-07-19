@@ -271,7 +271,8 @@
           horses: Array.isArray(r.horses) ? r.horses.map(h => ({
             ...h,
             mark: h.mark || '-',
-            number: h.number || ''
+            number: h.number || '',
+            paddockGood: typeof h.paddockGood === 'boolean' ? h.paddockGood : false
           })) : [],
           bets: Array.isArray(r.bets) ? r.bets.map(b => {
             if (!b || typeof b !== 'object') return b;
@@ -574,7 +575,7 @@
         }
       };
 
-      const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses||[]), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-' }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
+      const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses||[]), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-', paddockGood: false }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
       const handleUpdateHorse = (raceId, horseId, field, value) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).map(h => h.id === horseId ? { ...h, [field]: value } : h) } : r)); };
       const handleDeleteHorse = (raceId, horseId) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).filter(h => h.id !== horseId) } : r)); };
 
@@ -615,7 +616,7 @@
             let number = '';
             if (prefix) { const nums = prefix.match(/\b([1-9]|[1-2][0-9]|30)\b/g); if (nums && nums.length > 0) number = nums[nums.length - 1]; } 
             else if (pendingNumber) { number = pendingNumber; }
-            newHorsesList.push({ id: generateId(), number, name, mark: '-' });
+            newHorsesList.push({ id: generateId(), number, name, mark: '-', paddockGood: false });
             pendingNumber = '';
           } else {
             const numOnlyMatch = normalizedLine.match(/^(\d+)$/);
@@ -1617,6 +1618,18 @@
                             <div className={`absolute inset-0 flex items-center justify-center rounded-xl font-bold text-base border-2 ${markInfo.color} pointer-events-none`}>{markInfo.display}</div>
                             <select value={horse.mark} onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'mark', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer">{MARKS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateHorse(activeRace.id, horse.id, 'paddockGood', !horse.paddockGood)}
+                            className={`w-10 h-10 flex-shrink-0 flex flex-col items-center justify-center rounded-xl font-bold transition-all border ${
+                              horse.paddockGood
+                                ? 'bg-amber-50 text-amber-600 border-amber-300 ring-1 ring-amber-300 scale-105'
+                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600'
+                            }`}
+                          >
+                            <span className="text-[12px] leading-none mb-0.5">✨</span>
+                            <span className="text-[8px] leading-none font-black">パドック</span>
+                          </button>
                           <div className="flex-1 min-w-0"><h4 className={`font-bold text-[16px] truncate ${isKeshi ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{horse.name}</h4></div>
                           <button onClick={() => handleDeleteHorse(activeRace.id, horse.id)} className="text-gray-300 hover:text-red-500 p-2 flex-shrink-0 transition-colors"><Trash2 size={16} /></button>
                         </div>
@@ -1803,7 +1816,7 @@
                                           }}
                                           className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
                                         >
-                                          {h.number ? `${h.number}.` : ''}{h.name} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                          {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
                                         </button>
                                       );
                                     })
@@ -1841,7 +1854,7 @@
                                   onClick={() => toggleSelectHorse(1, val)}
                                   className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
                                 >
-                                  {h.number ? `${h.number}.` : ''}{h.name} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                  {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
                                 </button>
                               );
                             })
@@ -1889,7 +1902,7 @@
                                           onClick={() => toggleSelectHorse(rowNum, val)}
                                           className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
                                         >
-                                          {h.number ? `${h.number}.` : ''}{h.name} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                          {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
                                         </button>
                                       );
                                     })
