@@ -1669,7 +1669,7 @@
                   {betType !== '単勝' && betType !== '複勝' && (
                     <div>
                       <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
-                      <div className="grid grid-cols-4 gap-1 text-[10px] font-bold">
+                      <div className="flex flex-wrap gap-2 justify-center text-[10px] font-bold">
                         {['normal', 'box', 'formation', 'nagashi'].map(m => {
                           const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメーション' : '流し';
                           return (
@@ -1677,7 +1677,7 @@
                               key={m} 
                               type="button" 
                               onClick={() => setBetMethod(m)} 
-                              className={`py-2 px-1 rounded-lg border text-center transition-colors whitespace-nowrap text-[8px] min-[375px]:text-[9px] min-[400px]:text-[10px] ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                              className={`py-2 px-2 rounded-lg border text-center transition-colors whitespace-nowrap text-xs min-w-[80px] flex-shrink-0 ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                             >
                               {label}
                             </button>
