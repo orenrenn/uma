@@ -210,7 +210,20 @@
             mark: h.mark || '-',
             number: h.number || ''
           })) : [],
-          bets: Array.isArray(r.bets) ? r.bets : [],
+          bets: Array.isArray(r.bets) ? r.bets.map(b => {
+            if (!b || typeof b !== 'object') return b;
+            const combCount = typeof b.combinationCount === 'number' ? b.combinationCount : 1;
+            const amt = typeof b.amountPerBet === 'number' ? b.amountPerBet : 0;
+            return {
+              ...b,
+              type: b.type || '単勝',
+              method: b.method || 'normal',
+              horses: Array.isArray(b.horses) ? b.horses : [],
+              amountPerBet: amt,
+              combinationCount: combCount,
+              totalAmount: typeof b.totalAmount === 'number' ? b.totalAmount : (combCount * amt)
+            };
+          }) : [],
           result: r.result && typeof r.result === 'object' ? {
             first: r.result.first || '',
             second: r.result.second || '',
@@ -295,6 +308,16 @@
           const auth = firebase.auth();
           const db = firebase.firestore();
 
+          // iOS PWA（ホーム画面追加）環境の場合はリダイレクトログイン結果を安全に回収する
+          const isIOSPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+          if (isIOSPWA) {
+            await auth.getRedirectResult().catch(e => {
+              if (e.code !== 'auth/cancelled-popup-request') {
+                console.error("PWA redirect result error: ", e);
+              }
+            });
+          }
+
           auth.onAuthStateChanged((user) => {
             if (user) {
               cloudModeRef.current = true;
@@ -361,12 +384,20 @@
           
           const provider = new firebase.auth.GoogleAuthProvider();
           
-          // 【変更点】リダイレクトを完全にやめ、すべて「ポップアップ方式」に統一しました。
-          await firebase.auth().signInWithPopup(provider);
-          window.location.reload();
+          // iOS PWA（ホーム画面追加）環境の場合はリダイレクト方式を使い、それ以外はポップアップ方式を使う
+          const isIOSPWA = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+          if (isIOSPWA) {
+            await firebase.auth().signInWithRedirect(provider);
+          } else {
+            await firebase.auth().signInWithPopup(provider);
+            window.location.reload();
+          }
           
         } catch (e) {
-          alert("ログイン開始エラー: " + e.message);
+          // PWA環境で自動的に発生するcancelled-popup-requestなどの不要なエラーを表示しない
+          if (e.code !== 'auth/cancelled-popup-request') {
+            alert("ログイン開始エラー: " + e.message);
+          }
         }
       };
 
@@ -891,7 +922,16 @@
 
       const formatBetHorses = (bet) => {
         const { type, method, horses } = bet;
-        const [h1, h2, h3] = normalizeHorses(horses);
+        const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
+        
+        const toStr = (val) => {
+          if (!val) return '';
+          if (typeof val === 'object') return val.number || val.name || '';
+          return String(val);
+        };
+        const h1 = h1Raw.map(toStr).filter(Boolean);
+        const h2 = h2Raw.map(toStr).filter(Boolean);
+        const h3 = h3Raw.map(toStr).filter(Boolean);
         
         if (method === 'box') {
           return `${h1.join(', ')} (ボックス)`;
@@ -916,9 +956,19 @@
 
       const renderBetHorses = (bet, result) => {
         const { type, method, horses } = bet;
-        const [h1, h2, h3] = normalizeHorses(horses);
+        const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
+        
+        const toStr = (val) => {
+          if (!val) return '';
+          if (typeof val === 'object') return val.number || val.name || '';
+          return String(val);
+        };
+        const h1 = h1Raw.map(toStr).filter(Boolean);
+        const h2 = h2Raw.map(toStr).filter(Boolean);
+        const h3 = h3Raw.map(toStr).filter(Boolean);
 
-        const formatHorseNum = (num) => {
+        const formatHorseNum = (val) => {
+          const num = toStr(val);
           if (!num) return <span>-</span>;
           if (!result) return <span>{num}</span>;
           
@@ -1011,7 +1061,16 @@
 
       const expandBet = (bet, result) => {
         const { type, method, horses } = bet;
-        const [h1, h2, h3] = normalizeHorses(horses);
+        const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
+        
+        const toStr = (val) => {
+          if (!val) return '';
+          if (typeof val === 'object') return val.number || val.name || '';
+          return String(val);
+        };
+        const h1 = h1Raw.map(toStr).filter(Boolean);
+        const h2 = h2Raw.map(toStr).filter(Boolean);
+        const h3 = h3Raw.map(toStr).filter(Boolean);
         
         const combinations = [];
         
