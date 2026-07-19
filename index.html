@@ -1328,7 +1328,17 @@
                 </div>
 
                 <form onSubmit={handleAddHorse} className="mt-6 flex gap-2">
-                  <input type="number" value={newHorseNum} onChange={e => setNewHorseNum(e.target.value)} placeholder="番" className="w-16 border border-gray-200 rounded-xl p-2 text-center text-sm outline-none focus:border-green-600 bg-gray-50" min="1" max="18" />
+                  <input 
+                    type="number" 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={newHorseNum} 
+                    onChange={e => setNewHorseNum(e.target.value)} 
+                    placeholder="番" 
+                    className="w-16 border border-gray-200 rounded-xl p-2 text-center text-sm outline-none focus:border-green-600 bg-gray-50" 
+                    min="1" 
+                    max="18" 
+                  />
                   <input type="text" value={newHorseName} onChange={e => setNewHorseName(e.target.value)} placeholder="馬名を手動追加" className="flex-1 border border-gray-200 rounded-xl p-2 text-sm outline-none focus:border-green-600 bg-gray-50" />
                   <button type="submit" disabled={!newHorseName.trim()} className="bg-gray-800 text-white px-4 rounded-xl disabled:opacity-50 text-sm font-bold"><Plus size={16}/></button>
                 </form>
