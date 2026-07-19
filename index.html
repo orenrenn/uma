@@ -187,6 +187,18 @@
       return 0;
     };
 
+    const normalizeHorses = (horses) => {
+      if (!Array.isArray(horses)) return [[], [], []];
+      if (Array.isArray(horses[0])) {
+        return [
+          Array.isArray(horses[0]) ? horses[0] : [],
+          Array.isArray(horses[1]) ? horses[1] : [],
+          Array.isArray(horses[2]) ? horses[2] : []
+        ];
+      }
+      return [horses, [], []];
+    };
+
     const generateId = () => Date.now().toString() + Math.random().toString(36).substring(2, 9);
     const getTodayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
@@ -855,9 +867,7 @@
 
       const formatBetHorses = (bet) => {
         const { type, method, horses } = bet;
-        const h1 = horses[0] || [];
-        const h2 = horses[1] || [];
-        const h3 = horses[2] || [];
+        const [h1, h2, h3] = normalizeHorses(horses);
         
         if (method === 'box') {
           return `${h1.join(', ')} (ボックス)`;
@@ -882,9 +892,7 @@
 
       const renderBetHorses = (bet, result) => {
         const { type, method, horses } = bet;
-        const h1 = horses[0] || [];
-        const h2 = horses[1] || [];
-        const h3 = horses[2] || [];
+        const [h1, h2, h3] = normalizeHorses(horses);
 
         const formatHorseNum = (num) => {
           if (!num) return <span>-</span>;
@@ -979,9 +987,7 @@
 
       const expandBet = (bet, result) => {
         const { type, method, horses } = bet;
-        const h1 = horses[0] || [];
-        const h2 = horses[1] || [];
-        const h3 = horses[2] || [];
+        const [h1, h2, h3] = normalizeHorses(horses);
         
         const combinations = [];
         
