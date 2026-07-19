@@ -199,6 +199,29 @@
       return [horses, [], []];
     };
 
+    const ensureRaceSchema = (raceList) => {
+      if (!Array.isArray(raceList)) return [];
+      return raceList.map(r => {
+        if (!r || typeof r !== 'object') return r;
+        return {
+          ...r,
+          horses: Array.isArray(r.horses) ? r.horses.map(h => ({
+            ...h,
+            mark: h.mark || '-',
+            number: h.number || ''
+          })) : [],
+          bets: Array.isArray(r.bets) ? r.bets : [],
+          result: r.result && typeof r.result === 'object' ? {
+            first: r.result.first || '',
+            second: r.result.second || '',
+            third: r.result.third || ''
+          } : { first: '', second: '', third: '' },
+          investment: typeof r.investment === 'number' ? r.investment : 0,
+          payout: typeof r.payout === 'number' ? r.payout : 0
+        };
+      });
+    };
+
     const generateId = () => Date.now().toString() + Math.random().toString(36).substring(2, 9);
     const getTodayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
@@ -259,7 +282,7 @@
           initCloud(savedConfig);
         } else {
           const localData = localStorage.getItem(STORAGE_KEY);
-          if (localData) { try { setRaces(JSON.parse(localData)); } catch(e){} }
+          if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch(e){} }
           setLoading(false);
         }
       }, []);
@@ -299,19 +322,23 @@
                   }
                 }
                 
+                const verifiedRaces = ensureRaceSchema(cloudRaces);
+                
                 if (merged || !doc.exists) {
-                  db.collection('users').doc(user.uid).set({ races: cloudRaces }).catch(e => console.error(e));
+                  const cleanCloudRaces = JSON.parse(JSON.stringify(verifiedRaces));
+                  db.collection('users').doc(user.uid).set({ races: cleanCloudRaces }).catch(e => console.error(e));
                 }
                 
-                setRaces(cloudRaces);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudRaces));
+                setRaces(verifiedRaces);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(verifiedRaces));
                 setLoading(false);
                 
                 db.collection('users').doc(user.uid).onSnapshot((snap) => {
                   if (snap.exists) {
                     const updatedRaces = snap.data().races || [];
-                    setRaces(updatedRaces);
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRaces));
+                    const verifiedUpdated = ensureRaceSchema(updatedRaces);
+                    setRaces(verifiedUpdated);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(verifiedUpdated));
                   }
                 });
               }).catch((error) => {
@@ -320,7 +347,7 @@
               });
             } else {
               const localData = localStorage.getItem(STORAGE_KEY);
-              if (localData) { try { setRaces(JSON.parse(localData)); } catch(e){} }
+              if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch(e){} }
               setLoading(false);
               setIsCloudMode(false);
             }
@@ -383,13 +410,15 @@
 
       const updateRaces = (updater) => {
         setRaces(prev => {
-          const newRaces = typeof updater === 'function' ? updater(prev) : updater;
+          const rawRaces = typeof updater === 'function' ? updater(prev) : updater;
+          const verifiedRaces = ensureRaceSchema(rawRaces);
+          const cleanRaces = JSON.parse(JSON.stringify(verifiedRaces));
           if (cloudModeRef.current && cloudUserRef.current) {
-            firebase.firestore().collection('users').doc(cloudUserRef.current.uid).set({ races: newRaces }).catch(e => console.error(e));
+            firebase.firestore().collection('users').doc(cloudUserRef.current.uid).set({ races: cleanRaces }).catch(e => console.error(e));
           } else {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newRaces));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanRaces));
           }
-          return newRaces;
+          return cleanRaces;
         });
       };
 
