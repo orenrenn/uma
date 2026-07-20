@@ -1935,24 +1935,48 @@
                       />
                       <span className="self-center font-bold text-gray-500 text-xs">円</span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-                      {[100, 300, 500, 1000, 5000].map(amt => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => setBetAmountPerBet(prev => (parseInt(prev) || 0) + amt)}
-                          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
-                        >
-                          +{amt.toLocaleString()}円
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setBetAmountPerBet('')}
-                        className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors ml-auto"
-                      >
-                        クリア
-                      </button>
+                    <div className="space-y-2 text-[10px] min-[360px]:text-xs font-bold">
+                      <div>
+                        <span className="text-[9px] text-gray-400 block mb-1">金額指定 (直接設定)</span>
+                        <div className="flex flex-wrap gap-1">
+                          {[100, 200, 300, 500, 1000].map(amt => (
+                            <button
+                              key={amt}
+                              type="button"
+                              onClick={() => setBetAmountPerBet(String(amt))}
+                              className="px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
+                            >
+                              {amt.toLocaleString()}円
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setBetAmountPerBet('')}
+                            className="px-2 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors ml-auto"
+                          >
+                            クリア
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-gray-400 block mb-1">金額調整 (増減)</span>
+                        <div className="flex flex-wrap gap-1">
+                          {[-1000, -500, -100, 100, 500, 1000].map(amt => (
+                            <button
+                              key={amt}
+                              type="button"
+                              onClick={() => setBetAmountPerBet(prev => {
+                                const current = parseInt(prev) || 0;
+                                const next = current + amt;
+                                return next < 0 ? '0' : String(next);
+                              })}
+                              className="px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
+                            >
+                              {amt > 0 ? `+${amt.toLocaleString()}` : amt.toLocaleString()}円
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
