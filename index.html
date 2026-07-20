@@ -354,6 +354,24 @@
       const [betNagashiAnchorCount, setBetNagashiAnchorCount] = useState(1); // 1 or 2
       const [betMulti, setBetMulti] = useState(false);
       const [isAddBetOpen, setIsAddBetOpen] = useState(true);
+      const [undoAction, setUndoAction] = useState(null);
+
+      useEffect(() => {
+        if (!undoAction) return;
+        const timer = setTimeout(() => {
+          setUndoAction(null);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }, [undoAction]);
+
+      const handleUndo = () => {
+        if (!undoAction) return;
+        updateRaces(undoAction.backup);
+        if (undoAction.activeRaceId !== undefined) {
+          setActiveRaceId(undoAction.activeRaceId);
+        }
+        setUndoAction(null);
+      };
 
       useEffect(() => {
         if (betType === '単勝' || betType === '複勝') {
@@ -520,7 +538,18 @@
       };
 
       const handleAddRace = (e) => { e.preventDefault(); if (!newRaceName.trim()) return; updateRaces(prev => [{ id: generateId(), name: newRaceName, date: newRaceDate || getTodayStr(), horses: [] }, ...(Array.isArray(prev) ? prev : [])]); setNewRaceName(''); setIsAddingRace(false); };
-      const handleDeleteRace = (id) => { if (window.confirm('このレースを削除しますか？')) { updateRaces(prev => prev.filter(r => r.id !== id)); if (activeRaceId === id) setActiveRaceId(null); } };
+      const handleDeleteRace = (id) => {
+        const race = races.find(r => r.id === id);
+        if (!race) return;
+        const backup = JSON.parse(JSON.stringify(races));
+        setUndoAction({
+          backup,
+          activeRaceId,
+          message: `「${race.name}」のレースを削除しました`
+        });
+        updateRaces(prev => prev.filter(r => r.id !== id));
+        if (activeRaceId === id) setActiveRaceId(null);
+      };
       const handleUpdateRaceBalance = (raceId, investment, payout) => {
         updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, investment: parseInt(investment) || 0, payout: parseInt(payout) || 0 } : r));
       };
@@ -566,26 +595,50 @@
       };
 
       const handleDeleteBet = (raceId, betId) => {
-        if (window.confirm('この買い目を削除しますか？')) {
-          updateRaces(prev => prev.map(r => {
-            if (r.id === raceId) {
-              const currentBets = Array.isArray(r.bets) ? r.bets : [];
-              const newBets = currentBets.filter(b => b.id !== betId);
-              const newInvestment = newBets.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-              return {
-                ...r,
-                bets: newBets,
-                investment: newInvestment
-              };
-            }
-            return r;
-          }));
-        }
+        const race = races.find(r => r.id === raceId);
+        if (!race) return;
+        const bet = (race.bets || []).find(b => b.id === betId);
+        if (!bet) return;
+
+        const backup = JSON.parse(JSON.stringify(races));
+        setUndoAction({
+          backup,
+          activeRaceId,
+          message: `${bet.type}の買い目を削除しました`
+        });
+
+        updateRaces(prev => prev.map(r => {
+          if (r.id === raceId) {
+            const currentBets = Array.isArray(r.bets) ? r.bets : [];
+            const newBets = currentBets.filter(b => b.id !== betId);
+            const newInvestment = newBets.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+            return {
+              ...r,
+              bets: newBets,
+              investment: newInvestment
+            };
+          }
+          return r;
+        }));
       };
 
       const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses||[]), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-', paddockGood: false }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
       const handleUpdateHorse = (raceId, horseId, field, value) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).map(h => h.id === horseId ? { ...h, [field]: value } : h) } : r)); };
-      const handleDeleteHorse = (raceId, horseId) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).filter(h => h.id !== horseId) } : r)); };
+      const handleDeleteHorse = (raceId, horseId) => {
+        const race = races.find(r => r.id === raceId);
+        if (!race) return;
+        const horse = (race.horses || []).find(h => h.id === horseId);
+        if (!horse) return;
+
+        const backup = JSON.parse(JSON.stringify(races));
+        setUndoAction({
+          backup,
+          activeRaceId,
+          message: `「${horse.name}」の馬を削除しました`
+        });
+
+        updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).filter(h => h.id !== horseId) } : r));
+      };
 
       const handleToggleBetHit = (raceId, betId) => {
         updateRaces(prev => prev.map(r => {
@@ -2250,6 +2303,17 @@
               </div>
             )}
           </div>
+          {undoAction && (
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in">
+              <span className="text-xs font-medium text-gray-200">{undoAction.message}</span>
+              <button
+                onClick={handleUndo}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3"
+              >
+                元に戻す
+              </button>
+            </div>
+          )}
         </div>
       );
     }
