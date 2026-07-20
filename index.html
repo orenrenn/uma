@@ -1092,11 +1092,11 @@
               const countPrefix = deleteHistory.length > 1 ? `(${deleteHistory.length}件) ` : "";
               return (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in select-none">
-                  <span className="text-xs font-medium text-gray-200">{countPrefix}{lastAction.message}</span>
+                  <span className="text-xs font-medium text-gray-200 truncate flex-1 min-w-0 pr-2">{countPrefix}{lastAction.message}</span>
                   <button
                     type="button"
                     onClick={handleUndo}
-                    className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3 shadow-sm"
+                    className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 flex-shrink-0 ml-3 shadow-sm"
                   >
                     元に戻す
                   </button>
@@ -1655,7 +1655,8 @@
       };
 
       return (
-        <div className="max-w-xl mx-auto animate-fade-in bg-white min-h-screen pb-32">
+        <>
+          <div className="max-w-xl mx-auto animate-fade-in bg-white min-h-screen pb-32">
           <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between pt-safe relative">
             <button 
               onClick={() => {setActiveRaceId(null); setFilter('all'); setSortType('number'); setRaceDetailTab('predict');}} 
@@ -2335,11 +2336,11 @@
             const countPrefix = deleteHistory.length > 1 ? `(${deleteHistory.length}件) ` : "";
             return (
               <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in select-none">
-                <span className="text-xs font-medium text-gray-200">{countPrefix}{lastAction.message}</span>
+                <span className="text-xs font-medium text-gray-200 truncate flex-1 min-w-0 pr-2">{countPrefix}{lastAction.message}</span>
                 <button
                   type="button"
                   onClick={handleUndo}
-                  className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3 shadow-sm"
+                  className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 flex-shrink-0 ml-3 shadow-sm"
                 >
                   元に戻す
                 </button>
@@ -2347,7 +2348,8 @@
             );
           })()}
         </div>
-      );
+      </>
+    );
     }
     
     const fallbackUi = document.getElementById('fallback-ui');
