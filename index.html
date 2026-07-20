@@ -353,6 +353,7 @@
       const [betAmountStep, setBetAmountStep] = useState(100);
       const [betNagashiAnchorCount, setBetNagashiAnchorCount] = useState(1); // 1 or 2
       const [betMulti, setBetMulti] = useState(false);
+      const [isAddBetOpen, setIsAddBetOpen] = useState(true);
 
       useEffect(() => {
         if (betType === '単勝' || betType === '複勝') {
@@ -1675,8 +1676,32 @@
               <div className="space-y-6 animate-fade-in text-sm pb-16">
                 
                 {/* 1. 買い目簡単登録 */}
-                <form onSubmit={e => handleAddBet(activeRace.id, e)} className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-                  <h3 className="font-bold text-gray-800 flex items-center gap-1.5">🎫 買い目簡単登録</h3>
+                <form onSubmit={e => handleAddBet(activeRace.id, e)} className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                  <div 
+                    onClick={() => setIsAddBetOpen(!isAddBetOpen)}
+                    className="flex justify-between items-center cursor-pointer select-none py-1"
+                  >
+                    <h3 className="font-bold text-gray-800 flex items-center gap-1.5">🎫 買い目簡単登録</h3>
+                    <span className="text-gray-400">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="18" 
+                        height="18" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2.5" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        className={`transition-transform duration-200 ${isAddBetOpen ? 'rotate-180' : ''}`}
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                  </div>
+                  
+                  {isAddBetOpen && (
+                    <div className="space-y-4 mt-4 animate-fade-in">
                   
                   {/* 式別 */}
                   <div>
@@ -2030,7 +2055,9 @@
                       買い目に追加
                     </button>
                   </div>
-                </form>
+                </div>
+              )}
+            </form>
 
                 {/* 2. 登録済み買い目リスト */}
                 {/* 2. 登録済み買い目リスト */}
