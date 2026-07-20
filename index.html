@@ -354,23 +354,25 @@
       const [betNagashiAnchorCount, setBetNagashiAnchorCount] = useState(1); // 1 or 2
       const [betMulti, setBetMulti] = useState(false);
       const [isAddBetOpen, setIsAddBetOpen] = useState(true);
-      const [undoAction, setUndoAction] = useState(null);
+      const [deleteHistory, setDeleteHistory] = useState([]);
 
       useEffect(() => {
-        if (!undoAction) return;
+        if (deleteHistory.length === 0) return;
         const timer = setTimeout(() => {
-          setUndoAction(null);
-        }, 5000);
+          setDeleteHistory([]);
+        }, 10000);
         return () => clearTimeout(timer);
-      }, [undoAction]);
+      }, [deleteHistory]);
 
-      const handleUndo = () => {
-        if (!undoAction) return;
-        updateRaces(undoAction.backup);
-        if (undoAction.activeRaceId !== undefined) {
-          setActiveRaceId(undoAction.activeRaceId);
+      const handleUndo = (e) => {
+        if (e) e.stopPropagation();
+        if (deleteHistory.length === 0) return;
+        const lastAction = deleteHistory[deleteHistory.length - 1];
+        updateRaces(lastAction.backup);
+        if (lastAction.activeRaceId !== undefined) {
+          setActiveRaceId(lastAction.activeRaceId);
         }
-        setUndoAction(null);
+        setDeleteHistory(prev => prev.slice(0, -1));
       };
 
       useEffect(() => {
@@ -542,11 +544,14 @@
         const race = races.find(r => r.id === id);
         if (!race) return;
         const backup = JSON.parse(JSON.stringify(races));
-        setUndoAction({
-          backup,
-          activeRaceId,
-          message: `「${race.name}」のレースを削除しました`
-        });
+        setDeleteHistory(prev => [
+          ...prev,
+          {
+            backup,
+            activeRaceId,
+            message: `「${race.name}」のレースを削除しました`
+          }
+        ]);
         updateRaces(prev => prev.filter(r => r.id !== id));
         if (activeRaceId === id) setActiveRaceId(null);
       };
@@ -601,11 +606,14 @@
         if (!bet) return;
 
         const backup = JSON.parse(JSON.stringify(races));
-        setUndoAction({
-          backup,
-          activeRaceId,
-          message: `${bet.type}の買い目を削除しました`
-        });
+        setDeleteHistory(prev => [
+          ...prev,
+          {
+            backup,
+            activeRaceId,
+            message: `${bet.type}の買い目を削除しました`
+          }
+        ]);
 
         updateRaces(prev => prev.map(r => {
           if (r.id === raceId) {
@@ -631,11 +639,14 @@
         if (!horse) return;
 
         const backup = JSON.parse(JSON.stringify(races));
-        setUndoAction({
-          backup,
-          activeRaceId,
-          message: `「${horse.name}」の馬を削除しました`
-        });
+        setDeleteHistory(prev => [
+          ...prev,
+          {
+            backup,
+            activeRaceId,
+            message: `「${horse.name}」の馬を削除しました`
+          }
+        ]);
 
         updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).filter(h => h.id !== horseId) } : r));
       };
@@ -1076,20 +1087,22 @@
                 <span className="text-[10px]">収支管理</span>
               </button>
             </div>
-            {undoAction && (
-              <div 
-                onClick={handleUndo}
-                className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 hover:bg-gray-800/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in cursor-pointer select-none"
-              >
-                <span className="text-xs font-medium text-gray-200">{undoAction.message}</span>
-                <button
-                  type="button"
-                  className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3 shadow-sm"
-                >
-                  元に戻す
-                </button>
-              </div>
-            )}
+            {deleteHistory.length > 0 && (() => {
+              const lastAction = deleteHistory[deleteHistory.length - 1];
+              const countPrefix = deleteHistory.length > 1 ? `(${deleteHistory.length}件) ` : "";
+              return (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in select-none">
+                  <span className="text-xs font-medium text-gray-200">{countPrefix}{lastAction.message}</span>
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3 shadow-sm"
+                  >
+                    元に戻す
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         );
       }
@@ -2317,20 +2330,22 @@
               </div>
             )}
           </div>
-          {undoAction && (
-            <div 
-              onClick={handleUndo}
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 hover:bg-gray-800/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in cursor-pointer select-none"
-            >
-              <span className="text-xs font-medium text-gray-200">{undoAction.message}</span>
-              <button
-                type="button"
-                className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3 shadow-sm"
-              >
-                元に戻す
-              </button>
-            </div>
-          )}
+          {deleteHistory.length > 0 && (() => {
+            const lastAction = deleteHistory[deleteHistory.length - 1];
+            const countPrefix = deleteHistory.length > 1 ? `(${deleteHistory.length}件) ` : "";
+            return (
+              <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-3 px-4 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-fade-in select-none">
+                <span className="text-xs font-medium text-gray-200">{countPrefix}{lastAction.message}</span>
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shrink-0 ml-3 shadow-sm"
+                >
+                  元に戻す
+                </button>
+              </div>
+            );
+          })()}
         </div>
       );
     }
