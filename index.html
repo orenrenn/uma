@@ -350,6 +350,7 @@
       const [betSel2, setBetSel2] = useState([]);
       const [betSel3, setBetSel3] = useState([]);
       const [betAmountPerBet, setBetAmountPerBet] = useState(100);
+      const [betAmountStep, setBetAmountStep] = useState(100);
       const [betNagashiAnchorCount, setBetNagashiAnchorCount] = useState(1); // 1 or 2
       const [betMulti, setBetMulti] = useState(false);
 
@@ -1921,21 +1922,42 @@
                   {/* 1点あたり金額 */}
                   <div className="border-t border-gray-100 pt-3">
                     <span className="text-xs text-gray-400 font-bold block mb-2">1点あたりの金額 (円)</span>
-                    <div className="flex gap-2 mb-2">
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setBetAmountPerBet(prev => {
+                          const current = parseInt(prev) || 0;
+                          const next = current - betAmountStep;
+                          return next < 0 ? '0' : String(next);
+                        })}
+                        className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600 transition-colors"
+                      >
+                        ー
+                      </button>
                       <input 
                         type="number" 
                         inputMode="numeric"
                         pattern="[0-9]*"
                         value={betAmountPerBet || ''} 
                         onChange={e => setBetAmountPerBet(e.target.value)} 
-                        className="w-28 border border-gray-200 rounded-xl p-2 text-center text-sm font-bold outline-none focus:border-green-600 bg-gray-50"
+                        className="flex-1 border border-gray-200 rounded-xl p-2 text-center text-base font-bold outline-none focus:border-green-600 bg-gray-50 h-10"
                         placeholder="100"
-                        min="100" 
+                        min="0" 
                         step="100"
                       />
-                      <span className="self-center font-bold text-gray-500 text-xs">円</span>
+                      <button
+                        type="button"
+                        onClick={() => setBetAmountPerBet(prev => {
+                          const current = parseInt(prev) || 0;
+                          return String(current + betAmountStep);
+                        })}
+                        className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600 transition-colors"
+                      >
+                        ＋
+                      </button>
+                      <span className="self-center font-bold text-gray-500 text-xs ml-1">円</span>
                     </div>
-                    <div className="space-y-2 text-[10px] min-[360px]:text-xs font-bold">
+                    <div className="space-y-2.5 text-[10px] min-[360px]:text-xs font-bold">
                       <div>
                         <span className="text-[9px] text-gray-400 block mb-1">金額指定 (直接設定)</span>
                         <div className="flex flex-wrap gap-1">
@@ -1944,7 +1966,7 @@
                               key={amt}
                               type="button"
                               onClick={() => setBetAmountPerBet(String(amt))}
-                              className="px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
                             >
                               {amt.toLocaleString()}円
                             </button>
@@ -1952,27 +1974,27 @@
                           <button
                             type="button"
                             onClick={() => setBetAmountPerBet('')}
-                            className="px-2 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors ml-auto"
+                            className="px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors ml-auto"
                           >
                             クリア
                           </button>
                         </div>
                       </div>
                       <div>
-                        <span className="text-[9px] text-gray-400 block mb-1">金額調整 (増減)</span>
-                        <div className="flex flex-wrap gap-1">
-                          {[-1000, -500, -100, 100, 500, 1000].map(amt => (
+                        <span className="text-[9px] text-gray-400 block mb-1">＋ーボタンの調整単位</span>
+                        <div className="flex gap-1">
+                          {[100, 500, 1000].map(step => (
                             <button
-                              key={amt}
+                              key={step}
                               type="button"
-                              onClick={() => setBetAmountPerBet(prev => {
-                                const current = parseInt(prev) || 0;
-                                const next = current + amt;
-                                return next < 0 ? '0' : String(next);
-                              })}
-                              className="px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
+                              onClick={() => setBetAmountStep(step)}
+                              className={`px-3 py-1.5 rounded-lg border transition-colors ${
+                                betAmountStep === step
+                                  ? 'bg-green-600 text-white border-green-600'
+                                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                              }`}
                             >
-                              {amt > 0 ? `+${amt.toLocaleString()}` : amt.toLocaleString()}円
+                              {step.toLocaleString()}円ずつ
                             </button>
                           ))}
                         </div>
