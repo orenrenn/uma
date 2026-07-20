@@ -1685,7 +1685,7 @@
                   {betType !== '単勝' && betType !== '複勝' && (
                     <div>
                       <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
-                      <div className="grid grid-cols-4 gap-1 font-bold">
+                      <div className="grid grid-cols-4 gap-0.5 font-semibold">
                         {['normal', 'box', 'formation', 'nagashi'].map(m => {
                           const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメーション' : '流し';
                           return (
@@ -1693,7 +1693,7 @@
                               key={m} 
                               type="button" 
                               onClick={() => setBetMethod(m)} 
-                              className={`py-2 px-0.5 rounded-lg border text-center transition-colors whitespace-nowrap text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px] ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                              className={`py-2 px-0.5 rounded-lg border text-center transition-colors whitespace-nowrap tracking-tighter text-[7.5px] min-[360px]:text-[8.5px] min-[400px]:text-[9.5px] font-semibold ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                             >
                               {label}
                             </button>
@@ -1960,13 +1960,13 @@
                     <div className="space-y-2.5 text-[10px] min-[360px]:text-xs font-bold">
                       <div>
                         <span className="text-[9px] text-gray-400 block mb-1">金額指定 (直接設定)</span>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="grid grid-cols-6 gap-1">
                           {[100, 200, 300, 500, 1000].map(amt => (
                             <button
                               key={amt}
                               type="button"
                               onClick={() => setBetAmountPerBet(String(amt))}
-                              className="px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
+                              className="py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors text-center text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px]"
                             >
                               {amt.toLocaleString()}円
                             </button>
@@ -1974,7 +1974,7 @@
                           <button
                             type="button"
                             onClick={() => setBetAmountPerBet('')}
-                            className="px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors ml-auto"
+                            className="py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-center text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px]"
                           >
                             クリア
                           </button>
