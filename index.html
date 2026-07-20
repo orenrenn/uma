@@ -355,6 +355,12 @@
       const [betMulti, setBetMulti] = useState(false);
 
       useEffect(() => {
+        if (betType === '単勝' || betType === '複勝') {
+          if (betMethod !== 'normal') {
+            setBetMethod('normal');
+            return;
+          }
+        }
         setBetSel1([]);
         setBetSel2([]);
         setBetSel3([]);
