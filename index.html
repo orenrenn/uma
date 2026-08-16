@@ -295,16 +295,7 @@
       return probs;
     };
 
-    // 旧APIとの互換用ラッパー（馬番→オッズのマップを返すだけ）
-    const getHorseOddsMap = (horses = []) => {
-      const valid = (Array.isArray(horses) ? horses : []).filter(h => h && h.number);
-      const map = {};
-      valid.forEach(h => {
-        const o = parseFloat(h.odds);
-        if (!isNaN(o) && o > 0) map[String(h.number)] = o;
-      });
-      return map;
-    };
+
 
     // Harvilleモデルによる式別推計オッズの計算
     // winProbs: 全出走馬の勝率（getWinProbabilitiesの出力）
@@ -2499,7 +2490,7 @@
                             
                             // 1点買い目のオッズ・払戻金計算
                             const singleComb = combList.length === 1 ? combList[0] : null;
-                            const singleEstOdds = singleComb ? estimateCombinationOdds(bet.type, singleComb.text, oddsMap) : null;
+                            const singleEstOdds = singleComb ? estimateCombinationOdds(bet.type, singleComb.text, winProbs) : null;
                             const singlePayout = singleEstOdds ? Math.round((bet.amountPerBet || 0) * singleEstOdds) : null;
                             const singleIsTrigami = (singlePayout !== null && totalBetsAmount > 0) ? (singlePayout < totalBetsAmount) : false;
 
@@ -2591,7 +2582,7 @@
                                 {combList.length > 1 && (
                                   <div className="flex flex-wrap gap-1 pt-1.5 border-t border-gray-100 text-[10px] font-bold">
                                     {combList.map((c, idx) => {
-                                      const estOdds = estimateCombinationOdds(bet.type, c.text, oddsMap);
+                                      const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
                                       const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
                                       const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
 
