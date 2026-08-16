@@ -415,9 +415,8 @@
     //   P(k 3rd | i 1st, j 2nd) = p_k^c / Σ_{m≠i,j}(p_m^c)
     //
     // c < 1 により確率分布が平坦化され、穴馬の2・3着確率が引き上がる。
-    // c = 0.81 は Benter (1994) のHKJC実証研究で最適とされた値。
-    // JRA市場でも同等の値が妥当 (Snowberg & Wolfers 2010)。
-    const DISCOUNT_C = 0.75;
+    // 3連単などの連勝式では大穴の過剰投票が顕著なため、単勝より強めに補正(c=0.60)する。
+    const DISCOUNT_C = 0.60;
 
     // ディスカウント・ハーヴィルの条件付き確率ヘルパー
     // allProbs: 全馬の勝率マップ, excludeNums: 除外する馬番の配列, targetNum: 対象馬番
