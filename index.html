@@ -297,40 +297,54 @@
       let est = 0;
 
       if (type === '単勝') {
+        // 単勝はそのまま
         est = o1Val;
       } else if (type === '複勝') {
-        est = 1.0 + (o1Val - 1.0) * 0.25;
+        // 複勝: JRA払戻70〜80%前後, 単勝の25〜30%程度に収束
+        est = Math.max(1.1, 1.0 + (o1Val - 1.0) * 0.27);
       } else if (type === '馬連' || type === '枠連') {
+        // 馬連: prod^0.73 * 0.85 (低オッズ対では係数0.65は過小だったので0.85に補正)
         const prod = o1Val * o2Val;
-        est = Math.pow(prod, 0.73) * 0.65;
+        est = Math.pow(prod, 0.73) * 0.85;
       } else if (type === 'ワイド') {
+        // ワイド: 馬連の40〜50%程度が目安
         const prod = o1Val * o2Val;
-        est = Math.pow(prod, 0.65) * 0.28;
+        est = Math.pow(prod, 0.68) * 0.32;
       } else if (type === '馬単') {
+        // 馬単: 馬連 × 1.6〜2.5 (1着が穴馬ほど上振れ)
         const prod = o1Val * o2Val;
-        const base = Math.pow(prod, 0.73) * 0.65;
-        const orderFactor = o1Val > o2Val ? 2.2 : 1.7;
-        est = base * orderFactor;
+        const baseRentan = Math.pow(prod, 0.73) * 0.85;
+        // 1着馬オッズが大きいほど(穴馬1着)、順序係数が大きくなる
+        const ratio = o1Val / o2Val;
+        const orderFactor = ratio > 2.0 ? 2.3 : ratio > 0.5 ? 1.9 : 1.5;
+        est = baseRentan * orderFactor;
       } else if (type === '3連複') {
+        // 3連複: prod^0.67 は実証値と高い相関 (4.9×377.6×123 → 実際3968.8 vs 推計3880)
         const prod = o1Val * o2Val * o3Val;
         est = Math.pow(prod, 0.67);
       } else if (type === '3連単') {
+        // 3連単: 3連複 × 5〜8倍が平均的
+        // 1着馬オッズ順序で補正 (1着が本命→低い係数、1着が穴馬→高い係数)
         const prod = o1Val * o2Val * o3Val;
         const sanrenpuku = Math.pow(prod, 0.67);
-        let orderFactor = 5.5;
-        if (o1Val <= o2Val && o2Val <= o3Val) orderFactor = 4.0;
-        else if (o1Val >= o2Val && o2Val >= o3Val) orderFactor = 7.5;
+        // o1Val=1着馬単勝オッズ, o3Val=3着馬単勝オッズ
+        // 本命から順 (o1<=o2<=o3): 最も自然な順 → orderFactor小さめ
+        // 逆順 (o1>=o2>=o3): 穴馬から順 → orderFactor大きめ
+        let orderFactor;
+        if (o1Val <= o2Val && o1Val <= o3Val) {
+          // 1着が最も本命 → 自然な順位なのでリターン低め
+          orderFactor = 4.5;
+        } else if (o1Val >= o2Val && o1Val >= o3Val) {
+          // 1着が最も穴馬 → 最も波乱 → リターン高め
+          orderFactor = 7.5;
+        } else {
+          orderFactor = 5.5;
+        }
         est = sanrenpuku * orderFactor;
       }
 
       if (est <= 0) return null;
-      if (est >= 1000) {
-        return Math.round(est * 10) / 10;
-      } else if (est >= 100) {
-        return Math.round(est * 10) / 10;
-      } else {
-        return Math.max(1.0, Math.round(est * 10) / 10);
-      }
+      return Math.max(1.0, Math.round(est * 10) / 10);
     };
 
     // 合成オッズの計算 (1 / sum(1 / odds))
