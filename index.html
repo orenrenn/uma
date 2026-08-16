@@ -337,19 +337,66 @@
     };
 
     // 単勝オッズから各馬の勝率を推定
-    // 各馬の市場参加者が賭けた比率 ∝ 1/O_i と仮定し、合計が1になるよう正規化する
+    // Shin (1992) 確率モデルを使用して、インサイダー比率(z)を推計しながら控除率を排除する。
+    // 人気馬の確率の過大評価を防ぎ、より正確な真の勝率(p_i)を求める。
     const getWinProbabilities = (horses = []) => {
       const valid = (Array.isArray(horses) ? horses : []).filter(h => h && h.number);
-      const invOdds = {};
+      const invOddsMap = {};
+      const invOddsArray = [];
       valid.forEach(h => {
         const o = parseFloat(h.odds);
-        if (!isNaN(o) && o > 0) invOdds[String(h.number)] = 1 / o;
+        if (!isNaN(o) && o > 0) {
+          const inv = 1 / o;
+          invOddsMap[String(h.number)] = inv;
+          invOddsArray.push(inv);
+        }
       });
-      if (Object.keys(invOdds).length === 0) return {};
-      const total = Object.values(invOdds).reduce((s, v) => s + v, 0);
+      
+      const n = invOddsArray.length;
+      if (n === 0) return {};
+
+      // 1頭のみの場合（異常系）
+      if (n === 1) {
+        return { [Object.keys(invOddsMap)[0]]: 1.0 };
+      }
+
+      const sumInv = invOddsArray.reduce((s, v) => s + v, 0);
+      
+      // インサイダー比率 z の推計
+      let z = 0;
+      if (n === 2) {
+        const diffInv = invOddsArray[0] - invOddsArray[1];
+        z = ((sumInv - 1) * (diffInv * diffInv - sumInv)) / (sumInv * (diffInv * diffInv - 1));
+      } else {
+        // 反復計算で最適化 (最大1000回)
+        let delta = Infinity;
+        let iterations = 0;
+        while (delta > 1e-12 && iterations < 1000) {
+          const z0 = z;
+          let sumSqrt = 0;
+          for (let i = 0; i < n; i++) {
+            const io = invOddsArray[i];
+            sumSqrt += Math.sqrt(z * z + 4 * (1 - z) * io * io / sumInv);
+          }
+          z = (sumSqrt - 2) / (n - 2);
+          delta = Math.abs(z - z0);
+          iterations++;
+        }
+      }
+
+      // zが不正な値になった場合は単純正規化にフォールバック
+      if (isNaN(z) || z < 0 || z >= 1) {
+        const probs = {};
+        for (const [num, inv] of Object.entries(invOddsMap)) {
+          probs[num] = inv / sumInv;
+        }
+        return probs;
+      }
+
+      // Shinモデルでの各馬の真の勝率を計算
       const probs = {};
-      for (const [num, inv] of Object.entries(invOdds)) {
-        probs[num] = inv / total;
+      for (const [num, inv] of Object.entries(invOddsMap)) {
+        probs[num] = (Math.sqrt(z * z + 4 * (1 - z) * inv * inv / sumInv) - z) / (2 * (1 - z));
       }
       return probs;
     };
