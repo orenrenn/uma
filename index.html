@@ -265,89 +265,122 @@
       return [[], [], []];
     };
 
-    // 出走馬リストから各馬の単勝オッズ辞書を作成
-    const getHorseOddsMap = (horses = []) => {
-      const validHorses = (Array.isArray(horses) ? horses : []).filter(h => h && h.number);
-      const rawOdds = {};
-      validHorses.forEach(h => {
-        const val = parseFloat(h.odds);
-        if (!isNaN(val) && val > 0) {
-          rawOdds[String(h.number)] = val;
-        }
-      });
-      return rawOdds;
+    // ── Harvilleモデルによる買い目オッズ推計 ──────────────────────────────────
+    // 理論: Harville, D.A. (1973). Assigning Probabilities to the Outcomes of Multi-Entry Competitions.
+    //       JASA, 68(342), 312-316.
+    //
+    // JRA払戻率 (公式発表値。控除率 = 1 - 払戻率):
+    const JRA_PAYOUT_RATE = {
+      '単勝': 0.80, '複勝': 0.80,
+      '枠連': 0.775, '馬連': 0.775, 'ワイド': 0.775,
+      '馬単': 0.75, '3連複': 0.75,
+      '3連単': 0.725,
     };
 
-    // 組み合わせ文字列 (例: "1", "1 - 2", "1 ➔ 2 ➔ 3") と式別から実戦予想オッズを計算
-    // JRAプール相関に適合した幾何平均べき乗モデル (Favorite-Longshot Bias補正済)
-    const estimateCombinationOdds = (type, combStr, oddsMap) => {
-      if (!oddsMap || Object.keys(oddsMap).length === 0 || !combStr) return null;
+    // 単勝オッズから各馬の勝率を推定
+    // 各馬の市場参加者が賭けた比率 ∝ 1/O_i と仮定し、合計が1になるよう正規化する
+    const getWinProbabilities = (horses = []) => {
+      const valid = (Array.isArray(horses) ? horses : []).filter(h => h && h.number);
+      const invOdds = {};
+      valid.forEach(h => {
+        const o = parseFloat(h.odds);
+        if (!isNaN(o) && o > 0) invOdds[String(h.number)] = 1 / o;
+      });
+      if (Object.keys(invOdds).length === 0) return {};
+      const total = Object.values(invOdds).reduce((s, v) => s + v, 0);
+      const probs = {};
+      for (const [num, inv] of Object.entries(invOdds)) {
+        probs[num] = inv / total;
+      }
+      return probs;
+    };
+
+    // 旧APIとの互換用ラッパー（馬番→オッズのマップを返すだけ）
+    const getHorseOddsMap = (horses = []) => {
+      const valid = (Array.isArray(horses) ? horses : []).filter(h => h && h.number);
+      const map = {};
+      valid.forEach(h => {
+        const o = parseFloat(h.odds);
+        if (!isNaN(o) && o > 0) map[String(h.number)] = o;
+      });
+      return map;
+    };
+
+    // Harvilleモデルによる式別推計オッズの計算
+    // winProbs: 全出走馬の勝率（getWinProbabilitiesの出力）
+    const estimateCombinationOdds = (type, combStr, winProbs) => {
+      if (!winProbs || Object.keys(winProbs).length === 0 || !combStr) return null;
       const nums = combStr.match(/\d+/g);
-      if (!nums || nums.length === 0) return null;
+      if (!nums) return null;
 
-      const o1 = oddsMap[nums[0]];
-      const o2 = nums[1] ? oddsMap[nums[1]] : null;
-      const o3 = nums[2] ? oddsMap[nums[2]] : null;
+      const payoutRate = JRA_PAYOUT_RATE[type] || 0.75;
+      const nHorses = Object.keys(winProbs).length;
+      // 未登録馬のデフォルト勝率（全登録馬で確率が使われていない残りを均等配分）
+      const sumRegistered = Object.values(winProbs).reduce((s, v) => s + v, 0);
+      const defaultP = (1 - sumRegistered) / Math.max(1, 18 - nHorses); // 18頭フル想定
 
-      // 買い目に含まれる馬の単勝オッズ（未入力時は20倍基準で補完）
-      const o1Val = (typeof o1 === 'number' && o1 > 0) ? o1 : 20.0;
-      const o2Val = (typeof o2 === 'number' && o2 > 0) ? o2 : 20.0;
-      const o3Val = (typeof o3 === 'number' && o3 > 0) ? o3 : 20.0;
+      const p = (num) => winProbs[num] ?? Math.max(0.001, defaultP);
+      const p1 = p(nums[0]);
+      const p2 = nums[1] ? p(nums[1]) : 0;
+      const p3 = nums[2] ? p(nums[2]) : 0;
 
-      let est = 0;
+      let prob = 0;
 
       if (type === '単勝') {
-        // 単勝はそのまま
-        est = o1Val;
+        // 単勝確率はそのまま p_i
+        prob = p1;
+
       } else if (type === '複勝') {
-        // 複勝: JRA払戻70〜80%前後, 単勝の25〜30%程度に収束
-        est = Math.max(1.1, 1.0 + (o1Val - 1.0) * 0.27);
+        // 複勝: P(i が3着以内) を近似
+        // 厳密な式は複雑なため、大きなフィールドでの近似 p_i × 3 × 補正
+        prob = Math.min(0.95, p1 * 2.5);
+
       } else if (type === '馬連' || type === '枠連') {
-        // 馬連: prod^0.73 * 0.85 (低オッズ対では係数0.65は過小だったので0.85に補正)
-        const prod = o1Val * o2Val;
-        est = Math.pow(prod, 0.73) * 0.85;
+        // 馬連: P(i と j が1・2着（順不同）)
+        // = P(i 1st)×P(j 2nd | i 1st) + P(j 1st)×P(i 2nd | j 1st)
+        // Harville: P(j 2nd | i 1st) = p_j / (1 - p_i)
+        const d1 = Math.max(0.001, 1 - p1);
+        const d2 = Math.max(0.001, 1 - p2);
+        prob = p1 * (p2 / d1) + p2 * (p1 / d2);
+
       } else if (type === 'ワイド') {
-        // ワイド: 馬連の40〜50%程度が目安
-        const prod = o1Val * o2Val;
-        est = Math.pow(prod, 0.68) * 0.32;
+        // ワイド: P(i と j が両方3着以内) ≈ 馬連確率 × 3 (大きなフィールドでの近似)
+        const d1 = Math.max(0.001, 1 - p1);
+        const d2 = Math.max(0.001, 1 - p2);
+        prob = Math.min(0.95, (p1 * (p2 / d1) + p2 * (p1 / d2)) * 3.0);
+
       } else if (type === '馬単') {
-        // 馬単: 馬連 × 1.6〜2.5 (1着が穴馬ほど上振れ)
-        const prod = o1Val * o2Val;
-        const baseRentan = Math.pow(prod, 0.73) * 0.85;
-        // 1着馬オッズが大きいほど(穴馬1着)、順序係数が大きくなる
-        const ratio = o1Val / o2Val;
-        const orderFactor = ratio > 2.0 ? 2.3 : ratio > 0.5 ? 1.9 : 1.5;
-        est = baseRentan * orderFactor;
+        // 馬単: P(i が1着 かつ j が2着)
+        // = P(i 1st) × P(j 2nd | i 1st) = p_i × p_j / (1 - p_i)
+        prob = p1 * (p2 / Math.max(0.001, 1 - p1));
+
       } else if (type === '3連複') {
-        // 3連複: prod^0.67 は実証値と高い相関 (4.9×377.6×123 → 実際3968.8 vs 推計3880)
-        const prod = o1Val * o2Val * o3Val;
-        est = Math.pow(prod, 0.67);
+        // 3連複: P(i,j,k が1〜3着（順不同）)
+        // = 6通りの3連単確率の和 (Harville)
+        const d1 = Math.max(0.001, 1 - p1);
+        const d2 = Math.max(0.001, 1 - p2);
+        const d3 = Math.max(0.001, 1 - p3);
+        const d12 = Math.max(0.001, 1 - p1 - p2);
+        const d13 = Math.max(0.001, 1 - p1 - p3);
+        const d23 = Math.max(0.001, 1 - p2 - p3);
+        prob = p1*(p2/d1)*(p3/d12) + p1*(p3/d1)*(p2/d13)
+             + p2*(p1/d2)*(p3/d12) + p2*(p3/d2)*(p1/d23)
+             + p3*(p1/d3)*(p2/d13) + p3*(p2/d3)*(p1/d23);
+
       } else if (type === '3連単') {
-        // 3連単: 3連複 × 5〜8倍が平均的
-        // 1着馬オッズ順序で補正 (1着が本命→低い係数、1着が穴馬→高い係数)
-        const prod = o1Val * o2Val * o3Val;
-        const sanrenpuku = Math.pow(prod, 0.67);
-        // o1Val=1着馬単勝オッズ, o3Val=3着馬単勝オッズ
-        // 本命から順 (o1<=o2<=o3): 最も自然な順 → orderFactor小さめ
-        // 逆順 (o1>=o2>=o3): 穴馬から順 → orderFactor大きめ
-        let orderFactor;
-        if (o1Val <= o2Val && o1Val <= o3Val) {
-          // 1着が最も本命 → 自然な順位なのでリターン低め
-          orderFactor = 4.5;
-        } else if (o1Val >= o2Val && o1Val >= o3Val) {
-          // 1着が最も穴馬 → 最も波乱 → リターン高め
-          orderFactor = 7.5;
-        } else {
-          orderFactor = 5.5;
-        }
-        est = sanrenpuku * orderFactor;
+        // 3連単: P(i が1着, j が2着, k が3着)
+        // = p_i × p_j/(1-p_i) × p_k/(1-p_i-p_j)
+        const d1 = Math.max(0.001, 1 - p1);
+        const d12 = Math.max(0.001, 1 - p1 - p2);
+        prob = p1 * (p2 / d1) * (p3 / d12);
       }
 
-      if (est <= 0) return null;
-      return Math.max(1.0, Math.round(est * 10) / 10);
+      if (prob <= 0 || prob > 1) return null;
+      return Math.max(1.0, Math.round((payoutRate / prob) * 10) / 10);
     };
 
-    // 合成オッズの計算 (1 / sum(1 / odds))
+    // 合成オッズの計算: 全買い目を同時に的中させた場合の期待オッズ
+    // = 1 / Σ(1 / 各組み合わせのオッズ)
     const calculateCompositeOdds = (oddsList = []) => {
       const validOdds = oddsList.filter(o => typeof o === 'number' && o > 0);
       if (validOdds.length === 0) return null;
@@ -2414,15 +2447,15 @@
 
                 {/* 2. 登録済み買い目リスト */}
                 {(() => {
-                  const oddsMap = getHorseOddsMap(activeRace.horses || []);
-                  const hasAnyOdds = Object.keys(oddsMap).length > 0;
+                  const winProbs = getWinProbabilities(activeRace.horses || []);
+                  const hasAnyOdds = Object.keys(winProbs).length > 0;
 
                   // 全組み合わせのシミュレーション集計
                   let allCombs = [];
                   currentBets.forEach(bet => {
                     const combList = expandBet(bet, activeRace.result);
                     combList.forEach(c => {
-                      const estOdds = estimateCombinationOdds(bet.type, c.text, oddsMap);
+                      const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
                       const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
                       const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
                       allCombs.push({
