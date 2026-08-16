@@ -358,7 +358,6 @@
       const [betMulti, setBetMulti] = useState(false);
       const [isAddBetOpen, setIsAddBetOpen] = useState(true);
       const [editingBetId, setEditingBetId] = useState(null);
-      const isEditingBetRef = useRef(false);
       const [deleteHistory, setDeleteHistory] = useState([]);
 
       useEffect(() => {
@@ -379,24 +378,6 @@
         }
         setDeleteHistory(prev => prev.slice(0, -1));
       };
-
-      useEffect(() => {
-        if (betType === '単勝' || betType === '複勝') {
-          if (betMethod !== 'normal') {
-            setBetMethod('normal');
-            return;
-          }
-        }
-        if (isEditingBetRef.current) {
-          isEditingBetRef.current = false;
-          return;
-        }
-        setBetSel1([]);
-        setBetSel2([]);
-        setBetSel3([]);
-        setBetNagashiAnchorCount(1);
-        setBetMulti(false);
-      }, [betType, betMethod]);
 
       useEffect(() => {
         const savedConfig = localStorage.getItem(CONFIG_KEY);
@@ -636,14 +617,48 @@
         setBetSel3([]);
       };
 
+      const handleSelectBetType = (t) => {
+        setBetType(t);
+        if (t === '単勝' || t === '複勝') {
+          setBetMethod('normal');
+        }
+        setBetSel1([]);
+        setBetSel2([]);
+        setBetSel3([]);
+        setBetNagashiAnchorCount(1);
+        setBetMulti(false);
+      };
+
+      const handleSelectBetMethod = (m) => {
+        setBetMethod(m);
+        setBetSel1([]);
+        setBetSel2([]);
+        setBetSel3([]);
+        setBetNagashiAnchorCount(1);
+        setBetMulti(false);
+      };
+
       const handleStartEditBet = (bet) => {
-        isEditingBetRef.current = true;
+        if (!bet) return;
         setEditingBetId(bet.id);
-        setBetType(bet.type);
-        setBetMethod(bet.method);
-        setBetSel1(bet.horses?.sel1 ? [...bet.horses.sel1] : []);
-        setBetSel2(bet.horses?.sel2 ? [...bet.horses.sel2] : []);
-        setBetSel3(bet.horses?.sel3 ? [...bet.horses.sel3] : []);
+        const type = bet.type || '単勝';
+        const method = (type === '単勝' || type === '複勝') ? 'normal' : (bet.method || 'normal');
+        setBetType(type);
+        setBetMethod(method);
+
+        const [h1Raw, h2Raw, h3Raw] = normalizeHorses(bet.horses);
+        const toStr = (val) => {
+          if (val == null) return '';
+          if (typeof val === 'object') return String(val.number || val.name || '');
+          return String(val);
+        };
+        const sel1 = h1Raw.map(toStr).filter(Boolean);
+        const sel2 = h2Raw.map(toStr).filter(Boolean);
+        const sel3 = h3Raw.map(toStr).filter(Boolean);
+
+        setBetSel1(sel1);
+        setBetSel2(sel2);
+        setBetSel3(sel3);
         setBetAmountPerBet(bet.amountPerBet != null ? String(bet.amountPerBet) : '100');
         setBetNagashiAnchorCount(bet.anchorCount || 1);
         setBetMulti(!!bet.multi);
@@ -1892,7 +1907,7 @@
                         <button 
                           key={t} 
                           type="button" 
-                          onClick={() => setBetType(t)} 
+                          onClick={() => handleSelectBetType(t)} 
                           className={`py-2 rounded-lg border text-center transition-colors ${betType === t ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                         >
                           {t}
@@ -1912,7 +1927,7 @@
                             <button 
                               key={m} 
                               type="button" 
-                              onClick={() => setBetMethod(m)} 
+                              onClick={() => handleSelectBetMethod(m)} 
                               className={`py-2 px-0.5 rounded-lg border text-center transition-colors whitespace-nowrap tracking-tighter text-[7.5px] min-[360px]:text-[8.5px] min-[400px]:text-[9.5px] font-semibold ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                             >
                               {label}
