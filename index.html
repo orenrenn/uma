@@ -1103,9 +1103,7 @@
         if (markedHorses.length === 0) { alert('予想印(◎〜☆)がついていません！'); return; }
         let text = `🎫 ${race.name}\n`; 
         markedHorses.forEach(h => { 
-          const pad = h.paddockGood ? '✨' : '';
-          const memo = h.memo ? ` (${h.memo})` : '';
-          text += `${h.mark} ${h.number ? h.number + '番 ' : ''}${h.name}${pad}${memo}\n`; 
+          text += `${h.mark} ${h.number ? h.number + '番 ' : ''}${h.name}\n`; 
         });
         const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "absolute"; textArea.style.left = "-999999px";
         document.body.appendChild(textArea); textArea.select();
@@ -2074,14 +2072,14 @@
                         const isKeshi = horse.mark === '消';
                         const isLast = idx === filteredAndSorted.length - 1;
                         return (
-                          <div key={horse.id} className={`flex items-start p-3 sm:p-4 gap-2.5 sm:gap-3 transition-colors ${!isLast ? 'border-b border-gray-100' : ''} ${isKeshi ? 'bg-gray-100/70' : 'hover:bg-gray-50/70'}`}>
+                          <div key={horse.id} className={`flex items-center p-3 sm:p-3.5 gap-2.5 sm:gap-3 transition-colors ${!isLast ? 'border-b border-gray-100' : ''} ${isKeshi ? 'bg-gray-100/70' : 'hover:bg-gray-50/70'}`}>
                             {/* 左: 馬番 + 印 */}
-                            <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
                               <div className={`w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg text-xs font-black ${horse.number ? 'bg-slate-200 text-slate-800' : 'bg-transparent text-transparent'}`}>
                                 {horse.number || '-'}
                               </div>
-                              <div className="relative w-10 h-9 flex-shrink-0">
-                                <div className={`absolute inset-0 flex items-center justify-center rounded-xl font-black text-sm border-2 ${markInfo.color} pointer-events-none shadow-xs`}>
+                              <div className="relative w-10 h-8 flex-shrink-0">
+                                <div className={`absolute inset-0 flex items-center justify-center rounded-lg font-black text-sm border-2 ${markInfo.color} pointer-events-none shadow-xs`}>
                                   {markInfo.display}
                                 </div>
                                 <select 
@@ -2094,17 +2092,17 @@
                               </div>
                             </div>
 
-                            {/* 中央: 馬名 + (パドック & オッズ) + メモ */}
-                            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                            {/* 中央: 馬名(上段) + [パドック & オッズ & メモ](下段) */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                               <h4 className={`font-bold text-[14px] min-[390px]:text-[15px] leading-tight break-all ${isKeshi ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                                 {horse.name}
                               </h4>
-                              <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 {/* パドックトグルボタン */}
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateHorse(activeRace.id, horse.id, 'paddockGood', !horse.paddockGood)}
-                                  className={`px-1.5 py-0.5 rounded-md text-[10px] min-[360px]:text-[11px] font-bold transition-all border flex items-center gap-0.5 ${
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] min-[360px]:text-[11px] font-bold transition-all border flex items-center gap-0.5 flex-shrink-0 ${
                                     horse.paddockGood
                                       ? 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold shadow-xs'
                                       : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600'
@@ -2115,7 +2113,7 @@
                                 </button>
 
                                 {/* 単勝オッズ入力 */}
-                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                                   <span className="text-[10px] text-gray-400 font-bold">単勝</span>
                                   <input
                                     type="number"
@@ -2123,30 +2121,29 @@
                                     min="1.0"
                                     value={horse.odds || ''}
                                     onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'odds', e.target.value)}
-                                    placeholder="オッズ"
-                                    className="w-14 px-1.5 py-0.5 text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-md focus:border-green-600 focus:bg-white outline-none"
+                                    placeholder="-"
+                                    className="w-12 px-1 py-0.5 text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-md focus:border-green-600 focus:bg-white outline-none text-center"
                                   />
                                   <span className="text-[10px] text-gray-400 font-bold">倍</span>
                                 </div>
-                              </div>
 
-                              {/* メモ入力欄 */}
-                              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                                <span className="text-[11px] text-gray-400 select-none flex-shrink-0">💬</span>
-                                <input
-                                  type="text"
-                                  value={horse.memo || ''}
-                                  onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'memo', e.target.value)}
-                                  placeholder="メモを追加..."
-                                  className="flex-1 min-w-0 text-xs text-gray-700 bg-gray-50/80 hover:bg-gray-100/80 focus:bg-white border border-transparent hover:border-gray-200 focus:border-green-500 rounded-md px-2 py-1 outline-none transition-all placeholder:text-gray-300"
-                                />
+                                {/* メモ入力欄 (オッズ横にインライン配置) */}
+                                <div className="flex-1 min-w-[90px] flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    type="text"
+                                    value={horse.memo || ''}
+                                    onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'memo', e.target.value)}
+                                    placeholder="メモ..."
+                                    className="w-full text-xs text-gray-700 bg-transparent hover:bg-gray-50 focus:bg-white border-b border-gray-100 hover:border-gray-300 focus:border-green-500 px-1 py-0.5 outline-none transition-all placeholder:text-gray-300"
+                                  />
+                                </div>
                               </div>
                             </div>
 
                             {/* 右: 削除ボタン */}
                             <button 
                               onClick={() => handleDeleteHorse(activeRace.id, horse.id)} 
-                              className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg flex-shrink-0 transition-colors mt-0.5"
+                              className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg flex-shrink-0 transition-colors"
                             >
                               <Trash2 size={16} />
                             </button>
