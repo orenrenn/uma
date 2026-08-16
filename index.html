@@ -515,7 +515,8 @@
             mark: h.mark || '-',
             number: h.number || '',
             paddockGood: typeof h.paddockGood === 'boolean' ? h.paddockGood : false,
-            odds: h.odds || ''
+            odds: h.odds || '',
+            memo: typeof h.memo === 'string' ? h.memo : ''
           })) : [],
           bets: Array.isArray(r.bets) ? r.bets.map(b => {
             if (!b || typeof b !== 'object') return b;
@@ -965,7 +966,7 @@
         }));
       };
 
-      const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses || []), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-', paddockGood: false, odds: '' }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
+      const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses || []), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-', paddockGood: false, odds: '', memo: '' }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
       const handleUpdateHorse = (raceId, horseId, field, value) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses || []).map(h => h.id === horseId ? { ...h, [field]: value } : h) } : r)); };
       const handleDeleteHorse = (raceId, horseId) => {
         const race = races.find(r => r.id === raceId);
@@ -1034,7 +1035,7 @@
                 odds = oddsMatch[1];
               }
             }
-            newHorsesList.push({ id: generateId(), number, name, mark: '-', paddockGood: false, odds });
+            newHorsesList.push({ id: generateId(), number, name, mark: '-', paddockGood: false, odds, memo: '' });
             pendingNumber = '';
           } else {
             const numOnlyMatch = normalizedLine.match(/^(\d+)$/);
@@ -1100,7 +1101,12 @@
         const horses = Array.isArray(race.horses) ? race.horses : [];
         const markedHorses = horses.filter(h => h.mark !== '-' && h.mark !== '消').sort((a, b) => MARK_ORDER[a.mark] - MARK_ORDER[b.mark]);
         if (markedHorses.length === 0) { alert('予想印(◎〜☆)がついていません！'); return; }
-        let text = `🎫 ${race.name}\n`; markedHorses.forEach(h => { text += `${h.mark} ${h.number ? h.number + '番 ' : ''}${h.name}\n`; });
+        let text = `🎫 ${race.name}\n`; 
+        markedHorses.forEach(h => { 
+          const pad = h.paddockGood ? '✨' : '';
+          const memo = h.memo ? ` (${h.memo})` : '';
+          text += `${h.mark} ${h.number ? h.number + '番 ' : ''}${h.name}${pad}${memo}\n`; 
+        });
         const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "absolute"; textArea.style.left = "-999999px";
         document.body.appendChild(textArea); textArea.select();
         try { document.execCommand('copy'); setCopyStatus('コピー完了！'); setTimeout(() => setCopyStatus(''), 2000); } catch (err) { alert('コピーに失敗しました'); }
@@ -2068,9 +2074,9 @@
                         const isKeshi = horse.mark === '消';
                         const isLast = idx === filteredAndSorted.length - 1;
                         return (
-                          <div key={horse.id} className={`flex items-center p-3 sm:p-4 gap-2.5 sm:gap-3 transition-colors ${!isLast ? 'border-b border-gray-100' : ''} ${isKeshi ? 'bg-gray-100/70' : 'hover:bg-gray-50/70'}`}>
+                          <div key={horse.id} className={`flex items-start p-3 sm:p-4 gap-2.5 sm:gap-3 transition-colors ${!isLast ? 'border-b border-gray-100' : ''} ${isKeshi ? 'bg-gray-100/70' : 'hover:bg-gray-50/70'}`}>
                             {/* 左: 馬番 + 印 */}
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
                               <div className={`w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg text-xs font-black ${horse.number ? 'bg-slate-200 text-slate-800' : 'bg-transparent text-transparent'}`}>
                                 {horse.number || '-'}
                               </div>
@@ -2088,8 +2094,8 @@
                               </div>
                             </div>
 
-                            {/* 中央: 馬名 + (パドック & オッズ) */}
-                            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                            {/* 中央: 馬名 + (パドック & オッズ) + メモ */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
                               <h4 className={`font-bold text-[14px] min-[390px]:text-[15px] leading-tight break-all ${isKeshi ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                                 {horse.name}
                               </h4>
@@ -2123,12 +2129,24 @@
                                   <span className="text-[10px] text-gray-400 font-bold">倍</span>
                                 </div>
                               </div>
+
+                              {/* メモ入力欄 */}
+                              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                                <span className="text-[11px] text-gray-400 select-none flex-shrink-0">💬</span>
+                                <input
+                                  type="text"
+                                  value={horse.memo || ''}
+                                  onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'memo', e.target.value)}
+                                  placeholder="メモを追加..."
+                                  className="flex-1 min-w-0 text-xs text-gray-700 bg-gray-50/80 hover:bg-gray-100/80 focus:bg-white border border-transparent hover:border-gray-200 focus:border-green-500 rounded-md px-2 py-1 outline-none transition-all placeholder:text-gray-300"
+                                />
+                              </div>
                             </div>
 
                             {/* 右: 削除ボタン */}
                             <button 
                               onClick={() => handleDeleteHorse(activeRace.id, horse.id)} 
-                              className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg flex-shrink-0 transition-colors"
+                              className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg flex-shrink-0 transition-colors mt-0.5"
                             >
                               <Trash2 size={16} />
                             </button>
