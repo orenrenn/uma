@@ -630,12 +630,20 @@
       };
 
       const handleSelectBetMethod = (m) => {
-        setBetMethod(m);
+        if (m === 'multi') {
+          setBetMethod('nagashi');
+          setBetMulti(true);
+        } else if (m === 'nagashi') {
+          setBetMethod('nagashi');
+          setBetMulti(false);
+        } else {
+          setBetMethod(m);
+          setBetMulti(false);
+        }
         setBetSel1([]);
         setBetSel2([]);
         setBetSel3([]);
         setBetNagashiAnchorCount(1);
-        setBetMulti(false);
       };
 
       const handleStartEditBet = (bet) => {
@@ -1917,26 +1925,39 @@
                   </div>
 
                   {/* 買い方 (単複以外) */}
-                  {betType !== '単勝' && betType !== '複勝' && (
-                    <div>
-                      <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
-                      <div className="grid grid-cols-4 gap-0.5 font-semibold">
-                        {['normal', 'box', 'formation', 'nagashi'].map(m => {
-                          const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメーション' : '流し';
-                          return (
-                            <button 
-                              key={m} 
-                              type="button" 
-                              onClick={() => handleSelectBetMethod(m)} 
-                              className={`py-2 px-0.5 rounded-lg border text-center transition-colors whitespace-nowrap tracking-tighter text-[7.5px] min-[360px]:text-[8.5px] min-[400px]:text-[9.5px] font-semibold ${betMethod === m ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
-                            >
-                              {label}
-                            </button>
-                          );
-                        })}
+                  {betType !== '単勝' && betType !== '複勝' && (() => {
+                    const isOrderType = betType === '馬単' || betType === '3連単';
+                    const methods = isOrderType 
+                      ? ['normal', 'box', 'formation', 'nagashi', 'multi'] 
+                      : ['normal', 'box', 'formation', 'nagashi'];
+                    const currentActiveMethod = (betMethod === 'nagashi' && betMulti) ? 'multi' : betMethod;
+
+                    return (
+                      <div>
+                        <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
+                        <div className={`grid ${methods.length === 5 ? 'grid-cols-5' : 'grid-cols-4'} gap-0.5 font-semibold`}>
+                          {methods.map(m => {
+                            const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメーション' : m === 'nagashi' ? '流し' : 'マルチ';
+                            const isActive = currentActiveMethod === m;
+                            return (
+                              <button 
+                                key={m} 
+                                type="button" 
+                                onClick={() => handleSelectBetMethod(m)} 
+                                className={`py-2 px-0.5 rounded-lg border text-center transition-colors whitespace-nowrap tracking-tighter text-[7px] min-[360px]:text-[8px] min-[400px]:text-[9px] font-semibold ${
+                                  isActive 
+                                    ? (m === 'multi' ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-green-600 text-white border-green-600 shadow-sm') 
+                                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* 馬・枠選択 */}
                   <div>
@@ -2312,8 +2333,8 @@
                                   <span className="bg-green-50 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-green-100">
                                     {bet.type}
                                   </span>
-                                  <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                    {bet.method === 'normal' ? '通常' : bet.method === 'box' ? 'ボックス' : 'フォーメーション'}
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${bet.multi ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-100 text-gray-600'}`}>
+                                    {bet.method === 'normal' ? '通常' : bet.method === 'box' ? 'ボックス' : bet.method === 'formation' ? 'フォーメーション' : bet.multi ? 'マルチ' : '流し'}
                                   </span>
                                   <span className="text-[11px] text-gray-400 font-medium">
                                     {bet.combinationCount}点 × 各{bet.amountPerBet}円
