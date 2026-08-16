@@ -1,31 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="ウマメモ">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f9fafb">
-  
+
   <title>競馬予想・ウマメモ</title>
-  
+
   <style>
-    html, body {
-      background-color: #f9fafb; color: #111827; margin: 0; padding: 0;
+    html,
+    body {
+      background-color: #f9fafb;
+      color: #111827;
+      margin: 0;
+      padding: 0;
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-      -webkit-tap-highlight-color: transparent; min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 100vh;
     }
-    input, textarea, select { font-size: 16px !important; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
-    @keyframes simpleFadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .animate-simple-fade-in { animation: simpleFadeIn 0.2s ease-out forwards; }
-    #fallback-ui { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; }
+
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    @keyframes simpleFadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .animate-simple-fade-in {
+      animation: simpleFadeIn 0.2s ease-out forwards;
+    }
+
+    #fallback-ui {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
   </style>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -36,6 +94,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
+
 <body>
   <div id="fallback-ui">
     <h1 style="color: #16a34a; font-size: 24px; margin-bottom: 12px; font-weight: bold;">ウマメモ</h1>
@@ -69,19 +128,19 @@
       }
     }
 
-    const Plus = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
-    const Trash2 = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
-    const Edit2 = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
-    const ChevronLeft = ({ size=24, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="15 18 9 12 15 6"></polyline></svg>;
-    const ChevronRight = ({ size=24, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>;
-    const Award = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>;
-    const Flag = ({ size=24, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>;
-    const CopyIcon = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>;
-    const SettingsIcon = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
-    const CloudIcon = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>;
-    const GoogleIcon = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" className={className}><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.73 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>;
-    const BookOpen = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
-    const TrendingUp = ({ size=20, className="" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
+    const Plus = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+    const Trash2 = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+    const Edit2 = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
+    const ChevronLeft = ({ size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="15 18 9 12 15 6"></polyline></svg>;
+    const ChevronRight = ({ size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>;
+    const Award = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>;
+    const Flag = ({ size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>;
+    const CopyIcon = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>;
+    const SettingsIcon = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+    const CloudIcon = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>;
+    const GoogleIcon = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" className={className}><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.73 17.74 9.5 24 9.5z" /><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" /><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" /><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" /></svg>;
+    const BookOpen = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
+    const TrendingUp = ({ size = 20, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
 
     const MARKS = [
       { value: '-', display: '-', label: '未設定', color: 'bg-gray-50 text-gray-300 border-gray-200' },
@@ -311,7 +370,7 @@
     // c < 1 により確率分布が平坦化され、穴馬の2・3着確率が引き上がる。
     // c = 0.81 は Benter (1994) のHKJC実証研究で最適とされた値。
     // JRA市場でも同等の値が妥当 (Snowberg & Wolfers 2010)。
-    const DISCOUNT_C = 0.81;
+    const DISCOUNT_C = 0.75;
 
     // ディスカウント・ハーヴィルの条件付き確率ヘルパー
     // allProbs: 全馬の勝率マップ, excludeNums: 除外する馬番の配列, targetNum: 対象馬番
@@ -366,7 +425,7 @@
         // 近似: 1 - P(i が4着以下) ≈ 1 - Π_{r=1..3}(1 - condProb(i|r着))
         // より実用的な近似として、Harville的な包含を使う
         const cp1st = p1; // 1着確率
-        const cp2nd_given_not1st = condProb(allProbs, [], n1) * (1 - p1) < p1 
+        const cp2nd_given_not1st = condProb(allProbs, [], n1) * (1 - p1) < p1
           ? condProb(allProbs, [], n1) // fallback
           : 0;
         // 簡潔な近似: p_i + Σ_{j≠i} p_j × condProb(allProbs, [j], n1)
@@ -391,13 +450,13 @@
         // 馬連: P(i,j が1・2着 順不同)
         // = P(i 1st) × P(j 2nd | i 1st) + P(j 1st) × P(i 2nd | j 1st)
         prob = p1 * condProb(allProbs, [n1], n2)
-             + p2 * condProb(allProbs, [n2], n1);
+          + p2 * condProb(allProbs, [n2], n1);
 
       } else if (type === 'ワイド') {
         // ワイド: P(i,j が両方3着以内)
         // = 馬連確率 + P(i,j のどちらかが3着で他方が1or2着)
         const quinella = p1 * condProb(allProbs, [n1], n2)
-                       + p2 * condProb(allProbs, [n2], n1);
+          + p2 * condProb(allProbs, [n2], n1);
         // i,j以外の馬kが1着で、i,jが2・3着
         let prob3rd = 0;
         for (const [kNum, pk] of Object.entries(allProbs)) {
@@ -566,7 +625,7 @@
           initCloud(savedConfig);
         } else {
           const localData = localStorage.getItem(STORAGE_KEY);
-          if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch(e){} }
+          if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch (e) { } }
           setLoading(false);
         }
       }, []);
@@ -588,10 +647,10 @@
               db.collection('users').doc(user.uid).get().then((doc) => {
                 let cloudRaces = [];
                 if (doc.exists) { cloudRaces = doc.data().races || []; }
-                
+
                 const localData = localStorage.getItem(STORAGE_KEY);
                 let localRaces = localData ? JSON.parse(localData) : [];
-                
+
                 let merged = false;
                 if (localRaces.length > 0) {
                   const newRaces = localRaces.filter(lr => !cloudRaces.some(cr => cr.id === lr.id));
@@ -600,18 +659,18 @@
                     merged = true;
                   }
                 }
-                
+
                 const verifiedRaces = ensureRaceSchema(cloudRaces);
-                
+
                 if (merged || !doc.exists) {
                   const cleanCloudRaces = JSON.parse(JSON.stringify(verifiedRaces));
                   db.collection('users').doc(user.uid).set({ races: cleanCloudRaces }).catch(e => console.error(e));
                 }
-                
+
                 setRaces(verifiedRaces);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(verifiedRaces));
                 setLoading(false);
-                
+
                 db.collection('users').doc(user.uid).onSnapshot((snap) => {
                   if (snap.exists) {
                     const updatedRaces = snap.data().races || [];
@@ -624,9 +683,9 @@
                 console.error("Firestore get() error:", error);
                 // オフライン状態等でDB取得に失敗した場合でも、ローカルキャッシュを読み込んでアプリの起動を妨げない
                 const localData = localStorage.getItem(STORAGE_KEY);
-                if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch(e){} }
+                if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch (e) { } }
                 setLoading(false);
-                
+
                 // 一時的な接続エラー(offlineやunavailable)以外の場合のみ警告を表示する
                 if (error.code !== 'unavailable' && error.message.indexOf('offline') === -1) {
                   alert("データベースの読み込みに失敗しました。\n詳細: " + error.message);
@@ -634,7 +693,7 @@
               });
             } else {
               const localData = localStorage.getItem(STORAGE_KEY);
-              if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch(e){} }
+              if (localData) { try { setRaces(ensureRaceSchema(JSON.parse(localData))); } catch (e) { } }
               setLoading(false);
               setIsCloudMode(false);
             }
@@ -650,12 +709,12 @@
           const config = JSON.parse(configInput);
           localStorage.setItem(CONFIG_KEY, configInput);
           if (!firebase.apps.length) firebase.initializeApp(config);
-          
+
           const provider = new firebase.auth.GoogleAuthProvider();
-          
+
           await firebase.auth().signInWithPopup(provider);
           window.location.reload();
-          
+
         } catch (e) {
           if (e.code !== 'auth/cancelled-popup-request') {
             alert("ログイン開始エラー: " + e.message);
@@ -664,8 +723,8 @@
       };
 
       const handleDisconnect = async () => {
-        if(window.confirm("連携を解除してローカル保存に戻りますか？\n※iPhoneアプリ版では、再ログイン時に不具合が起きやすいため非推奨です。")) {
-          try { if(firebase.apps.length > 0) await firebase.auth().signOut(); } catch(e) {}
+        if (window.confirm("連携を解除してローカル保存に戻りますか？\n※iPhoneアプリ版では、再ログイン時に不具合が起きやすいため非推奨です。")) {
+          try { if (firebase.apps.length > 0) await firebase.auth().signOut(); } catch (e) { }
           localStorage.removeItem(CONFIG_KEY);
           window.location.reload();
         }
@@ -673,7 +732,7 @@
 
       // 🌟 バグ修復用：Firebaseのゴミデータを「全て」強制削除する（アルティメット版） 🌟
       const handleFixLoginCache = () => {
-        if(window.confirm("ログインシステムのキャッシュを「完全」にリセットしますか？\n※予想データは消えませんのでご安心ください。")) {
+        if (window.confirm("ログインシステムのキャッシュを「完全」にリセットしますか？\n※予想データは消えませんのでご安心ください。")) {
           try {
             // 1. IndexedDBの削除
             indexedDB.deleteDatabase('firebaseLocalStorageDb');
@@ -688,8 +747,8 @@
               }
             }
             keysToRemove.forEach(k => localStorage.removeItem(k));
-          } catch(e) { console.error(e); }
-          
+          } catch (e) { console.error(e); }
+
           localStorage.removeItem(CONFIG_KEY);
           alert("完全リセットが完了しました！\n\n【重要】この後、iPhoneの画面を上にスワイプしてアプリ（またはSafari）を「完全に終了（タスクキル）」させてから、もう一度開いてください。");
           window.location.reload();
@@ -906,8 +965,8 @@
         }));
       };
 
-      const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses||[]), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-', paddockGood: false, odds: '' }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
-      const handleUpdateHorse = (raceId, horseId, field, value) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).map(h => h.id === horseId ? { ...h, [field]: value } : h) } : r)); };
+      const handleAddHorse = (e) => { e.preventDefault(); if (!newHorseName.trim() || !activeRaceId) return; updateRaces(prev => prev.map(r => r.id === activeRaceId ? { ...r, horses: [...(r.horses || []), { id: generateId(), number: newHorseNum, name: newHorseName, mark: '-', paddockGood: false, odds: '' }] } : r)); setNewHorseNum(''); setNewHorseName(''); };
+      const handleUpdateHorse = (raceId, horseId, field, value) => { updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses || []).map(h => h.id === horseId ? { ...h, [field]: value } : h) } : r)); };
       const handleDeleteHorse = (raceId, horseId) => {
         const race = races.find(r => r.id === raceId);
         if (!race) return;
@@ -924,7 +983,7 @@
           }
         ]);
 
-        updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses||[]).filter(h => h.id !== horseId) } : r));
+        updateRaces(prev => prev.map(r => r.id === raceId ? { ...r, horses: (r.horses || []).filter(h => h.id !== horseId) } : r));
       };
 
       const handleToggleBetHit = (raceId, betId) => {
@@ -950,11 +1009,11 @@
 
       const handleParseImport = () => {
         if (!importText.trim() || !activeRaceId) return;
-        let newHorsesList = []; const lines = importText.split('\n'); let pendingNumber = ''; 
+        let newHorsesList = []; const lines = importText.split('\n'); let pendingNumber = '';
         lines.forEach(line => {
           let normalizedLine = line.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).trim();
-          if(!normalizedLine) return;
-          if (normalizedLine.match(/\(\d{2}\.\d\)/) || normalizedLine.match(/[a-zA-Z]\./)) return; 
+          if (!normalizedLine) return;
+          if (normalizedLine.match(/\(\d{2}\.\d\)/) || normalizedLine.match(/[a-zA-Z]\./)) return;
           const ignoreWords = ['ブリンカー', 'カクチ', 'カクガイ', 'マルガイ', 'マルチ', 'カク地', 'マル地', 'マル外', 'カク外'];
           ignoreWords.forEach(word => { normalizedLine = normalizedLine.replace(new RegExp(word, 'g'), '').trim(); });
           const nameMatch = normalizedLine.match(/([ァ-ヴー・]{2,9})/);
@@ -964,7 +1023,7 @@
             const prefix = normalizedLine.substring(0, nameIdx).trim();
             const suffix = normalizedLine.substring(nameIdx + name.length).trim();
             let number = '';
-            if (prefix) { const nums = prefix.match(/\b([1-9]|[1-2][0-9]|30)\b/g); if (nums && nums.length > 0) number = nums[nums.length - 1]; } 
+            if (prefix) { const nums = prefix.match(/\b([1-9]|[1-2][0-9]|30)\b/g); if (nums && nums.length > 0) number = nums[nums.length - 1]; }
             else if (pendingNumber) { number = pendingNumber; }
 
             // 馬名の次に入っている数字（単勝オッズ）を抽出
@@ -979,7 +1038,7 @@
             pendingNumber = '';
           } else {
             const numOnlyMatch = normalizedLine.match(/^(\d+)$/);
-            if(numOnlyMatch) pendingNumber = numOnlyMatch[1];
+            if (numOnlyMatch) pendingNumber = numOnlyMatch[1];
             else { const twoNumsMatch = normalizedLine.match(/(\d+)\s+(\d+)$/); if (twoNumsMatch) pendingNumber = twoNumsMatch[2]; }
           }
         });
@@ -991,19 +1050,19 @@
         if (!importBalanceText.trim()) return;
         const lines = importBalanceText.split('\n');
         const importedRaces = [];
-        
+
         lines.forEach(line => {
           const row = line.trim();
           if (!row) return;
-          
+
           const parts = row.split(/\t|\s{2,}/);
           if (parts.length < 2) return;
-          
+
           let dateStr = parts[0].trim();
           let nameStr = parts[1].trim();
           let investStr = parts[2] ? parts[2].trim() : '0';
           let payoutStr = parts[3] ? parts[3].trim() : '0';
-          
+
           dateStr = dateStr.replace(/\//g, '-');
           if (dateStr.match(/^\d{2}-\d{2}-\d{2}$/)) {
             dateStr = '20' + dateStr;
@@ -1011,10 +1070,10 @@
           if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
             dateStr = getTodayStr();
           }
-          
+
           const investment = parseInt(investStr.replace(/,/g, '').replace(/円/g, '')) || 0;
           const payout = parseInt(payoutStr.replace(/,/g, '').replace(/円/g, '')) || 0;
-          
+
           importedRaces.push({
             id: generateId(),
             name: nameStr,
@@ -1026,7 +1085,7 @@
             payout: payout
           });
         });
-        
+
         if (importedRaces.length > 0) {
           updateRaces(prev => [...importedRaces, ...(Array.isArray(prev) ? prev : [])]);
           alert(`${importedRaces.length}件の過去収支をインポートしました！`);
@@ -1041,7 +1100,7 @@
         const horses = Array.isArray(race.horses) ? race.horses : [];
         const markedHorses = horses.filter(h => h.mark !== '-' && h.mark !== '消').sort((a, b) => MARK_ORDER[a.mark] - MARK_ORDER[b.mark]);
         if (markedHorses.length === 0) { alert('予想印(◎〜☆)がついていません！'); return; }
-        let text = `🎫 ${race.name}\n`; markedHorses.forEach(h => { text += `${h.mark} ${h.number ? h.number+'番 ' : ''}${h.name}\n`; });
+        let text = `🎫 ${race.name}\n`; markedHorses.forEach(h => { text += `${h.mark} ${h.number ? h.number + '番 ' : ''}${h.name}\n`; });
         const textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "absolute"; textArea.style.left = "-999999px";
         document.body.appendChild(textArea); textArea.select();
         try { document.execCommand('copy'); setCopyStatus('コピー完了！'); setTimeout(() => setCopyStatus(''), 2000); } catch (err) { alert('コピーに失敗しました'); }
@@ -1054,7 +1113,7 @@
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16 animate-fade-in">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl flex flex-col max-h-[80vh]">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2 flex-shrink-0"><CloudIcon className="text-blue-500" /> データ同期設定</h3>
-            
+
             <div className="flex-1 overflow-y-auto pr-2 -mr-2 pb-2">
               {isCloudMode ? (
                 <div>
@@ -1072,8 +1131,8 @@
                 <div>
                   <p className="text-xs text-gray-600 mb-3 leading-relaxed">Firebaseの設定(JSON)を貼り付けると、Googleアカウントでのログイン画面が開き、データをクラウドに保存できます。</p>
                   <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", ...}' className="w-full border border-gray-200 rounded-xl p-3 text-xs h-32 outline-none focus:border-green-600 bg-gray-50 mb-4 font-mono shadow-inner" />
-                  <button onClick={handleLoginClick} disabled={!configInput.trim()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl mb-2 disabled:opacity-50 hover:bg-blue-700"><GoogleIcon size={20} className="bg-white rounded-full p-0.5"/> Googleでログインして同期</button>
-                  
+                  <button onClick={handleLoginClick} disabled={!configInput.trim()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl mb-2 disabled:opacity-50 hover:bg-blue-700"><GoogleIcon size={20} className="bg-white rounded-full p-0.5" /> Googleでログインして同期</button>
+
                   <div className="mt-6 pt-4 border-t border-gray-100">
                     <p className="text-[10px] text-gray-500 mb-2 font-bold">🛠️ トラブルシューティング</p>
                     <p className="text-[10px] text-gray-400 mb-2 leading-tight">何度ログインしても同期されない場合、iPhone内にゴミデータが残って通信をブロックしています。</p>
@@ -1090,15 +1149,15 @@
                 <p className="text-[10px] text-gray-400 mb-2 leading-tight">
                   スプレッドシートから [日付, レース名, 購入額, 払戻額] の列範囲をコピペし、以下に貼り付けて取り込みボタンを押してください。
                 </p>
-                <textarea 
-                  value={importBalanceText} 
-                  onChange={e => setImportBalanceText(e.target.value)} 
+                <textarea
+                  value={importBalanceText}
+                  onChange={e => setImportBalanceText(e.target.value)}
                   placeholder={"2026/07/19\t函館2歳S\t1000\t2500\n2026/07/18\t函館記念\t500\t0"}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-[11px] h-20 outline-none focus:border-green-600 bg-gray-50 mb-2 shadow-inner font-mono whitespace-pre" 
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-[11px] h-20 outline-none focus:border-green-600 bg-gray-50 mb-2 shadow-inner font-mono whitespace-pre"
                 />
                 {importBalanceText.trim() && (
-                  <button 
-                    onClick={handleImportBalance} 
+                  <button
+                    onClick={handleImportBalance}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition-colors animate-fade-in"
                   >
                     収支データを取り込む
@@ -1106,7 +1165,7 @@
                 )}
               </div>
             </div>
-            
+
             <button onClick={() => setIsSettingsOpen(false)} className="w-full text-gray-500 font-bold py-3 mt-4 hover:bg-gray-50 rounded-xl border border-transparent flex-shrink-0">閉じる</button>
           </div>
         </div>
@@ -1134,8 +1193,8 @@
           };
         });
 
-        const displayedBalanceData = balanceSortOption === 'desc' 
-          ? [...balanceData].reverse() 
+        const displayedBalanceData = balanceSortOption === 'desc'
+          ? [...balanceData].reverse()
           : balanceData;
 
         const totalInvestment = balanceData.reduce((sum, d) => sum + d.investment, 0);
@@ -1211,14 +1270,14 @@
                 <div className="flex justify-between items-center mb-4 text-xs px-1">
                   <span className="font-bold text-gray-400">収支推移タイムライン</span>
                   <div className="flex bg-gray-200/60 p-0.5 rounded-lg font-bold">
-                    <button 
-                      onClick={() => setBalanceSortOption('asc')} 
+                    <button
+                      onClick={() => setBalanceSortOption('asc')}
                       className={`px-2.5 py-1 rounded-md transition-colors ${balanceSortOption === 'asc' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
                     >
                       古い順
                     </button>
-                    <button 
-                      onClick={() => setBalanceSortOption('desc')} 
+                    <button
+                      onClick={() => setBalanceSortOption('desc')}
                       className={`px-2.5 py-1 rounded-md transition-colors ${balanceSortOption === 'desc' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
                     >
                       新しい順
@@ -1234,8 +1293,8 @@
                     </div>
                   ) : (
                     displayedBalanceData.map((data) => (
-                      <div 
-                        key={data.id} 
+                      <div
+                        key={data.id}
                         onClick={() => {
                           setActiveRaceId(data.id);
                           setRaceDetailTab('bets');
@@ -1244,7 +1303,7 @@
                       >
                         {/* タイムラインのドット */}
                         <div className="absolute -left-[31px] top-6 w-3 h-3 rounded-full bg-green-600 border-2 border-white shadow-sm group-hover:scale-110 transition-transform"></div>
-                        
+
                         {/* 1行目: 日付・レース名・収支 */}
                         <div className="flex justify-between items-center gap-2">
                           <div className="flex items-center gap-2 min-w-0">
@@ -1260,7 +1319,7 @@
                             {data.balance > 0 ? '+' : ''}{data.balance.toLocaleString()}円
                           </span>
                         </div>
-                        
+
                         {/* 2行目: 詳細と通算収支 */}
                         <div className="flex justify-between items-center text-xs text-gray-400 font-bold border-t border-gray-50 pt-2">
                           <div>
@@ -1390,8 +1449,8 @@
                     >
                       元に戻す
                     </button>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); setDeleteHistory([]); }}
                       className="text-gray-400 hover:text-gray-200 p-1.5 rounded-lg transition-colors"
                     >
@@ -1407,20 +1466,20 @@
 
       const activeRace = Array.isArray(races) ? races.find(r => r.id === activeRaceId) : null;
       if (!activeRace) { setActiveRaceId(null); return null; }
-      
+
       const currentHorses = Array.isArray(activeRace.horses) ? activeRace.horses : [];
-      let filteredAndSorted = currentHorses.filter(horse => { 
-        if (filter === 'all') return true; 
+      let filteredAndSorted = currentHorses.filter(horse => {
+        if (filter === 'all') return true;
         if (filter === 'marked_paddock') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark) || horse.paddockGood === true;
-        if (filter === 'marked') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark); 
-        if (filter === 'keshi') return horse.mark === '消'; 
-        return true; 
+        if (filter === 'marked') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark);
+        if (filter === 'keshi') return horse.mark === '消';
+        return true;
       });
-      filteredAndSorted.sort((a, b) => { 
-        if (sortType === 'number') return (parseInt(a.number)||999) - (parseInt(b.number)||999); 
-        const markDiff = MARK_ORDER[a.mark] - MARK_ORDER[b.mark]; 
-        if (markDiff !== 0) return markDiff; 
-        return (parseInt(a.number)||999) - (parseInt(b.number)||999); 
+      filteredAndSorted.sort((a, b) => {
+        if (sortType === 'number') return (parseInt(a.number) || 999) - (parseInt(b.number) || 999);
+        const markDiff = MARK_ORDER[a.mark] - MARK_ORDER[b.mark];
+        if (markDiff !== 0) return markDiff;
+        return (parseInt(a.number) || 999) - (parseInt(b.number) || 999);
       });
 
       const currentBets = Array.isArray(activeRace.bets) ? activeRace.bets : [];
@@ -1440,7 +1499,7 @@
       const toggleSelectHorse = (rowNum, horseVal) => {
         const setSel = [null, setBetSel1, setBetSel2, setBetSel3][rowNum];
         const sel = [null, betSel1, betSel2, betSel3][rowNum];
-        
+
         if (betMethod === 'box') {
           if (betSel1.includes(horseVal)) {
             setBetSel1(betSel1.filter(v => v !== horseVal));
@@ -1468,7 +1527,7 @@
       const formatBetHorses = (bet) => {
         const { type, method, horses } = bet;
         const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
-        
+
         const toStr = (val) => {
           if (!val) return '';
           if (typeof val === 'object') return val.number || val.name || '';
@@ -1477,7 +1536,7 @@
         const h1 = h1Raw.map(toStr).filter(Boolean);
         const h2 = h2Raw.map(toStr).filter(Boolean);
         const h3 = h3Raw.map(toStr).filter(Boolean);
-        
+
         if (method === 'box') {
           return `${h1.join(', ')} (ボックス)`;
         }
@@ -1492,18 +1551,18 @@
           }
           return `軸: ${h1[0] || '-'} ➔ 相手: ${h2.join(', ')}${multiSuffix}`;
         }
-        
+
         if (type === '単勝' || type === '複勝') {
           return h1.join(', ');
         }
-        
+
         if (type === '3連複' || type === '3連単') {
           if (method === 'formation') {
             return `${h1.join(',')} → ${h2.join(',')} → ${h3.join(',')}`;
           }
           return `${h1[0] || '-'} → ${h2[0] || '-'} → ${h3[0] || '-'}`;
         }
-        
+
         if (method === 'formation') {
           return `${h1.join(',')} - ${h2.join(',')}`;
         }
@@ -1513,7 +1572,7 @@
       const renderBetHorses = (bet, result) => {
         const { type, method, horses } = bet;
         const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
-        
+
         const toStr = (val) => {
           if (!val) return '';
           if (typeof val === 'object') return val.number || val.name || '';
@@ -1527,7 +1586,7 @@
           const num = toStr(val);
           if (!num) return <span>-</span>;
           if (!result) return <span>{num}</span>;
-          
+
           let badge = null;
           if (result.first && result.first === num) {
             badge = <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-yellow-500 text-white text-[8px] font-extrabold ml-1 shadow-sm">1</span>;
@@ -1659,7 +1718,7 @@
       const expandBet = (bet, result) => {
         const { type, method, horses } = bet;
         const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
-        
+
         const toStr = (val) => {
           if (!val) return '';
           if (typeof val === 'object') return val.number || val.name || '';
@@ -1668,14 +1727,14 @@
         const h1 = h1Raw.map(toStr).filter(Boolean);
         const h2 = h2Raw.map(toStr).filter(Boolean);
         const h3 = h3Raw.map(toStr).filter(Boolean);
-        
+
         const combinations = [];
-        
+
         const first = result?.first || '';
         const second = result?.second || '';
         const third = result?.third || '';
 
-        const sortNums = (...args) => args.map(Number).sort((a,b)=>a-b).map(String).join('-');
+        const sortNums = (...args) => args.map(Number).sort((a, b) => a - b).map(String).join('-');
 
         if (type === '単勝') {
           h1.forEach(num => {
@@ -1863,13 +1922,13 @@
               if (a && b && a !== b) {
                 h3.forEach(c => {
                   if (a === c || b === c) return;
-                  const patterns = isMulti 
+                  const patterns = isMulti
                     ? [
-                        [a, b, c], [a, c, b], [c, a, b],
-                        [b, a, c], [b, c, a], [c, b, a]
-                      ]
+                      [a, b, c], [a, c, b], [c, a, b],
+                      [b, a, c], [b, c, a], [c, b, a]
+                    ]
                     : [[a, b, c], [b, a, c]];
-                  
+
                   patterns.forEach(([p1, p2, p3]) => {
                     const isHit = first && second && third && first === p1 && second === p2 && third === p3;
                     combinations.push({ text: `${p1} → ${p2} → ${p3}`, isHit });
@@ -1885,13 +1944,13 @@
                     if (i === j) continue;
                     const b = partners[i];
                     const c = partners[j];
-                    
+
                     const patterns = isMulti
                       ? [
-                          [a, b, c], [b, a, c], [b, c, a]
-                        ]
+                        [a, b, c], [b, a, c], [b, c, a]
+                      ]
                       : [[a, b, c]];
-                      
+
                     patterns.forEach(([p1, p2, p3]) => {
                       const isHit = first && second && third && first === p1 && second === p2 && third === p3;
                       combinations.push({ text: `${p1} → ${p2} → ${p3}`, isHit });
@@ -1910,7 +1969,7 @@
             }
           }
         }
-        
+
         return combinations;
       };
 
@@ -1919,12 +1978,12 @@
         const investment = race.investment || 0;
         const payout = race.payout || 0;
         const balance = payout - investment;
-        
+
         let text = `🎫 ${race.name} 買い目・収支\n`;
         text += `購入金額: ${investment.toLocaleString()}円\n`;
         text += `払戻金額: ${payout.toLocaleString()}円\n`;
         text += `収支: ${balance >= 0 ? '+' : ''}${balance.toLocaleString()}円\n\n`;
-        
+
         if (bets.length > 0) {
           text += `【買い目内訳】\n`;
           bets.forEach(b => {
@@ -1936,18 +1995,18 @@
           text += `登録された買い目はありません。`;
         }
 
-        const textArea = document.createElement("textarea"); 
-        textArea.value = text.trim(); 
-        textArea.style.position = "absolute"; 
+        const textArea = document.createElement("textarea");
+        textArea.value = text.trim();
+        textArea.style.position = "absolute";
         textArea.style.left = "-999999px";
-        document.body.appendChild(textArea); 
+        document.body.appendChild(textArea);
         textArea.select();
-        try { 
-          document.execCommand('copy'); 
-          setCopyStatus('コピー完了！'); 
-          setTimeout(() => setCopyStatus(''), 2000); 
-        } catch (err) { 
-          alert('コピーに失敗しました'); 
+        try {
+          document.execCommand('copy');
+          setCopyStatus('コピー完了！');
+          setTimeout(() => setCopyStatus(''), 2000);
+        } catch (err) {
+          alert('コピーに失敗しました');
         }
         document.body.removeChild(textArea);
       };
@@ -1955,941 +2014,961 @@
       return (
         <>
           <div className="max-w-xl mx-auto animate-fade-in bg-white min-h-screen pb-32">
-          <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between pt-safe relative">
-            <button 
-              onClick={() => {handleCancelEditBet(); setActiveRaceId(null); setFilter('all'); setSortType('number'); setRaceDetailTab('predict');}} 
-              className="flex items-center gap-1 p-1.5 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors z-10"
-            >
-              <ChevronLeft size={22} />
-              <Flag className="text-green-600 flex-shrink-0" size={16} />
-              <span className="text-[11px] font-extrabold text-green-800 tracking-tight hidden min-[390px]:inline">ウマメモ</span>
-            </button>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[50%] text-center min-w-0"><h2 className="text-sm font-bold text-gray-900 truncate">{activeRace.name}</h2></div>
-            <button 
-              onClick={() => raceDetailTab === 'predict' ? handleCopyResult(activeRace) : handleCopyBets(activeRace)} 
-              className="p-2 -mr-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full relative group z-10"
-            >
-              <CopyIcon size={20} />
-              {copyStatus && <span className="absolute top-10 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">{copyStatus}</span>}
-            </button>
-          </div>
+            <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between pt-safe relative">
+              <button
+                onClick={() => { handleCancelEditBet(); setActiveRaceId(null); setFilter('all'); setSortType('number'); setRaceDetailTab('predict'); }}
+                className="flex items-center gap-1 p-1.5 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors z-10"
+              >
+                <ChevronLeft size={22} />
+                <Flag className="text-green-600 flex-shrink-0" size={16} />
+                <span className="text-[11px] font-extrabold text-green-800 tracking-tight hidden min-[390px]:inline">ウマメモ</span>
+              </button>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[50%] text-center min-w-0"><h2 className="text-sm font-bold text-gray-900 truncate">{activeRace.name}</h2></div>
+              <button
+                onClick={() => raceDetailTab === 'predict' ? handleCopyResult(activeRace) : handleCopyBets(activeRace)}
+                className="p-2 -mr-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full relative group z-10"
+              >
+                <CopyIcon size={20} />
+                {copyStatus && <span className="absolute top-10 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">{copyStatus}</span>}
+              </button>
+            </div>
 
-          <div className="flex border-b border-gray-100 text-sm font-bold bg-gray-50/50">
-            <button onClick={() => {handleCancelEditBet(); setRaceDetailTab('predict');}} className={`flex-1 py-3 text-center transition-colors ${raceDetailTab === 'predict' ? 'text-green-600 border-b-2 border-green-600 bg-white' : 'text-gray-400 hover:text-gray-600'}`}>予想印</button>
-            <button onClick={() => setRaceDetailTab('bets')} className={`flex-1 py-3 text-center transition-colors ${raceDetailTab === 'bets' ? 'text-green-600 border-b-2 border-green-600 bg-white' : 'text-gray-400 hover:text-gray-600'}`}>買い目・収支</button>
-          </div>
+            <div className="flex border-b border-gray-100 text-sm font-bold bg-gray-50/50">
+              <button onClick={() => { handleCancelEditBet(); setRaceDetailTab('predict'); }} className={`flex-1 py-3 text-center transition-colors ${raceDetailTab === 'predict' ? 'text-green-600 border-b-2 border-green-600 bg-white' : 'text-gray-400 hover:text-gray-600'}`}>予想印</button>
+              <button onClick={() => setRaceDetailTab('bets')} className={`flex-1 py-3 text-center transition-colors ${raceDetailTab === 'bets' ? 'text-green-600 border-b-2 border-green-600 bg-white' : 'text-gray-400 hover:text-gray-600'}`}>買い目・収支</button>
+            </div>
 
-          <div className="p-4">
-            {raceDetailTab === 'predict' ? (
-              <div className="space-y-4 animate-fade-in">
-                <div className="mb-6">
-                   <textarea value={importText} onChange={e => setImportText(e.target.value)} placeholder="出馬表をコピペして一括追加..." className="w-full border border-gray-200 rounded-xl p-3 text-sm h-14 outline-none focus:border-blue-400 focus:h-32 transition-all duration-200 bg-gray-50" />
-                   {importText.trim() && <button onClick={handleParseImport} className="mt-2 w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm animate-fade-in">解析して追加</button>}
-                </div>
+            <div className="p-4">
+              {raceDetailTab === 'predict' ? (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="mb-6">
+                    <textarea value={importText} onChange={e => setImportText(e.target.value)} placeholder="出馬表をコピペして一括追加..." className="w-full border border-gray-200 rounded-xl p-3 text-sm h-14 outline-none focus:border-blue-400 focus:h-32 transition-all duration-200 bg-gray-50" />
+                    {importText.trim() && <button onClick={handleParseImport} className="mt-2 w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm animate-fade-in">解析して追加</button>}
+                  </div>
 
-                 <div className="flex items-center justify-between gap-1 mb-4 bg-gray-50 p-1.5 rounded-xl border border-gray-100 text-[10px] min-[360px]:text-xs font-bold">
-                   <div className="flex gap-0.5 min-[360px]:gap-1">
-                     <button onClick={() => setFilter('all')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>全頭</button>
-                     <button onClick={() => setFilter('marked_paddock')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'marked_paddock' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印/パ</button>
-                     <button onClick={() => setFilter('marked')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'marked' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印</button>
-                     <button onClick={() => setFilter('keshi')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'keshi' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>消</button>
-                   </div>
-                   <div className="flex gap-0.5 bg-gray-200/50 p-0.5 rounded-lg">
-                     <button onClick={() => setSortType('number')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'number' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>馬番</button>
-                     <button onClick={() => setSortType('mark')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'mark' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>印順</button>
-                   </div>
-                 </div>
+                  <div className="flex items-center justify-between gap-1 mb-4 bg-gray-50 p-1.5 rounded-xl border border-gray-100 text-[10px] min-[360px]:text-xs font-bold">
+                    <div className="flex gap-0.5 min-[360px]:gap-1">
+                      <button onClick={() => setFilter('all')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>全頭</button>
+                      <button onClick={() => setFilter('marked_paddock')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'marked_paddock' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印/パ</button>
+                      <button onClick={() => setFilter('marked')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'marked' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印</button>
+                      <button onClick={() => setFilter('keshi')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'keshi' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>消</button>
+                    </div>
+                    <div className="flex gap-0.5 bg-gray-200/50 p-0.5 rounded-lg">
+                      <button onClick={() => setSortType('number')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'number' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>馬番</button>
+                      <button onClick={() => setSortType('mark')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'mark' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>印順</button>
+                    </div>
+                  </div>
 
-                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-                  {filteredAndSorted.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-gray-400">表示する馬がいません</div>
-                  ) : (
-                    filteredAndSorted.map((horse, idx) => {
-                      const markInfo = MARKS.find(m => m.value === horse.mark) || MARKS[0];
-                      const isKeshi = horse.mark === '消';
-                      const isLast = idx === filteredAndSorted.length - 1;
-                      return (
-                        <div key={horse.id} className={`flex items-center p-3 sm:p-4 gap-3 transition-colors ${!isLast ? 'border-b border-gray-100' : ''} ${isKeshi ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
-                          <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg text-sm font-bold ${horse.number ? 'bg-slate-200 text-slate-700' : 'bg-transparent text-transparent'}`}>{horse.number || '-'}</div>
-                          <div className="relative w-12 h-10 flex-shrink-0">
-                            <div className={`absolute inset-0 flex items-center justify-center rounded-xl font-bold text-base border-2 ${markInfo.color} pointer-events-none`}>{markInfo.display}</div>
-                            <select value={horse.mark} onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'mark', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer">{MARKS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
+                  <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+                    {filteredAndSorted.length === 0 ? (
+                      <div className="p-8 text-center text-sm text-gray-400">表示する馬がいません</div>
+                    ) : (
+                      filteredAndSorted.map((horse, idx) => {
+                        const markInfo = MARKS.find(m => m.value === horse.mark) || MARKS[0];
+                        const isKeshi = horse.mark === '消';
+                        const isLast = idx === filteredAndSorted.length - 1;
+                        return (
+                          <div key={horse.id} className={`flex items-center p-3 sm:p-4 gap-2.5 sm:gap-3 transition-colors ${!isLast ? 'border-b border-gray-100' : ''} ${isKeshi ? 'bg-gray-100/70' : 'hover:bg-gray-50/70'}`}>
+                            {/* 左: 馬番 + 印 */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <div className={`w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg text-xs font-black ${horse.number ? 'bg-slate-200 text-slate-800' : 'bg-transparent text-transparent'}`}>
+                                {horse.number || '-'}
+                              </div>
+                              <div className="relative w-10 h-9 flex-shrink-0">
+                                <div className={`absolute inset-0 flex items-center justify-center rounded-xl font-black text-sm border-2 ${markInfo.color} pointer-events-none shadow-xs`}>
+                                  {markInfo.display}
+                                </div>
+                                <select 
+                                  value={horse.mark} 
+                                  onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'mark', e.target.value)} 
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                >
+                                  {MARKS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* 中央: 馬名 + (パドック & オッズ) */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                              <h4 className={`font-bold text-[14px] min-[390px]:text-[15px] leading-tight break-all ${isKeshi ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                {horse.name}
+                              </h4>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {/* パドックトグルボタン */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateHorse(activeRace.id, horse.id, 'paddockGood', !horse.paddockGood)}
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] min-[360px]:text-[11px] font-bold transition-all border flex items-center gap-0.5 ${
+                                    horse.paddockGood
+                                      ? 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold shadow-xs'
+                                      : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600'
+                                  }`}
+                                >
+                                  <span>✨</span>
+                                  <span>パドック</span>
+                                </button>
+
+                                {/* 単勝オッズ入力 */}
+                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                  <span className="text-[10px] text-gray-400 font-bold">単勝</span>
+                                  <input
+                                    type="number"
+                                    step="0.1"
+                                    min="1.0"
+                                    value={horse.odds || ''}
+                                    onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'odds', e.target.value)}
+                                    placeholder="オッズ"
+                                    className="w-14 px-1.5 py-0.5 text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-md focus:border-green-600 focus:bg-white outline-none"
+                                  />
+                                  <span className="text-[10px] text-gray-400 font-bold">倍</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 右: 削除ボタン */}
+                            <button 
+                              onClick={() => handleDeleteHorse(activeRace.id, horse.id)} 
+                              className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg flex-shrink-0 transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateHorse(activeRace.id, horse.id, 'paddockGood', !horse.paddockGood)}
-                            className={`w-10 h-10 flex-shrink-0 flex flex-col items-center justify-center rounded-xl font-bold transition-all border ${
-                              horse.paddockGood
-                                ? 'bg-amber-50 text-amber-600 border-amber-300 ring-1 ring-amber-300 scale-105'
-                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100 hover:text-gray-600'
-                            }`}
-                          >
-                            <span className="text-[12px] leading-none mb-0.5">✨</span>
-                            <span className="text-[8px] leading-none font-black">パドック</span>
-                          </button>
-                          <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h4 className={`font-bold text-[15px] truncate ${isKeshi ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{horse.name}</h4>
-                            <div className="flex items-center gap-1 mt-0.5" onClick={e => e.stopPropagation()}>
-                              <span className="text-[10px] text-gray-400 font-bold">単勝</span>
-                              <input 
-                                type="number" 
-                                step="0.1" 
-                                min="1.0" 
-                                value={horse.odds || ''} 
-                                onChange={e => handleUpdateHorse(activeRace.id, horse.id, 'odds', e.target.value)} 
-                                placeholder="オッズ" 
-                                className="w-16 px-1.5 py-0.5 text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-md focus:border-green-600 focus:bg-white outline-none"
-                              />
-                              <span className="text-[10px] text-gray-400 font-bold">倍</span>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <form onSubmit={handleAddHorse} className="mt-6 flex gap-2">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={newHorseNum}
+                      onChange={e => setNewHorseNum(e.target.value)}
+                      placeholder="番"
+                      className="w-16 border border-gray-200 rounded-xl p-2 text-center text-sm outline-none focus:border-green-600 bg-gray-50"
+                      min="1"
+                      max="18"
+                    />
+                    <input type="text" value={newHorseName} onChange={e => setNewHorseName(e.target.value)} placeholder="馬名を手動追加" className="flex-1 border border-gray-200 rounded-xl p-2 text-sm outline-none focus:border-green-600 bg-gray-50" />
+                    <button type="submit" disabled={!newHorseName.trim()} className="bg-gray-800 text-white px-4 rounded-xl disabled:opacity-50 text-sm font-bold"><Plus size={16} /></button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-fade-in text-sm pb-16">
+
+                  {/* 1. 買い目簡単登録 / 編集 */}
+                  <form
+                    id="bet-form-container"
+                    onSubmit={e => handleSaveBet(activeRace.id, e)}
+                    className={`p-4 rounded-2xl border shadow-sm transition-all duration-200 ${editingBetId
+                        ? 'bg-amber-50/30 border-amber-300 ring-2 ring-amber-200'
+                        : 'bg-white border-gray-200'
+                      }`}
+                  >
+                    <div
+                      onClick={() => setIsAddBetOpen(!isAddBetOpen)}
+                      className="flex justify-between items-center cursor-pointer select-none py-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-1.5">
+                          {editingBetId ? '✏️ 買い目を編集' : '🎫 買い目簡単登録'}
+                        </h3>
+                        {editingBetId && (
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-200 animate-fade-in">
+                            編集中
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-gray-400">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`transition-transform duration-200 ${isAddBetOpen ? 'rotate-180' : ''}`}
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </span>
+                    </div>
+
+                    {isAddBetOpen && (
+                      <div className="space-y-4 mt-4 animate-fade-in">
+
+                        {/* 式別 */}
+                        <div>
+                          <span className="text-xs text-gray-400 font-bold block mb-2">式別</span>
+                          <div className="grid grid-cols-4 gap-1.5 text-xs font-bold">
+                            {['単勝', '複勝', '枠連', '馬連', '馬単', 'ワイド', '3連複', '3連単'].map(t => (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => handleSelectBetType(t)}
+                                className={`py-2 rounded-lg border text-center transition-colors ${betType === t ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 買い方 (単複以外) */}
+                        {betType !== '単勝' && betType !== '複勝' && (() => {
+                          const isOrderType = betType === '馬単' || betType === '3連単';
+                          const methods = isOrderType
+                            ? ['normal', 'box', 'formation', 'nagashi', 'multi']
+                            : ['normal', 'box', 'formation', 'nagashi'];
+                          const currentActiveMethod = (betMethod === 'nagashi' && betMulti) ? 'multi' : betMethod;
+
+                          return (
+                            <div>
+                              <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
+                              <div className={`grid ${methods.length === 5 ? 'grid-cols-5' : 'grid-cols-4'} gap-1 font-semibold`}>
+                                {methods.map(m => {
+                                  const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメ' : m === 'nagashi' ? '流し' : 'マルチ';
+                                  const isActive = currentActiveMethod === m;
+                                  return (
+                                    <button
+                                      key={m}
+                                      type="button"
+                                      onClick={() => handleSelectBetMethod(m)}
+                                      className={`py-2 px-1 rounded-lg border text-center transition-colors whitespace-nowrap text-xs font-bold ${isActive
+                                          ? (m === 'multi' ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-green-600 text-white border-green-600 shadow-sm')
+                                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                      {label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 馬・枠選択 */}
+                        <div>
+                          <span className="text-xs text-gray-400 font-bold block mb-2">
+                            {betType === '枠連' ? '枠番号' : '馬番号'} の選択
+                          </span>
+
+                          {betMethod === 'nagashi' ? (
+                            <div className="space-y-4">
+                              {(betType === '3連複' || betType === '3連単') && (
+                                <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                                  <span className="text-[11px] text-gray-500 font-bold">軸頭数</span>
+                                  <div className="flex gap-1 text-[10px] font-bold">
+                                    {[1, 2].map(num => (
+                                      <button
+                                        key={num}
+                                        type="button"
+                                        onClick={() => {
+                                          setBetNagashiAnchorCount(num);
+                                          setBetSel1([]);
+                                          setBetSel2([]);
+                                          setBetSel3([]);
+                                        }}
+                                        className={`px-3 py-1.5 rounded-lg border transition-colors ${betNagashiAnchorCount === num ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                      >
+                                        軸{num}頭
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {(betType === '馬単' || betType === '3連単') && (
+                                <label className="flex items-center gap-2 bg-red-50/50 p-2.5 rounded-xl border border-red-100/50 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={betMulti}
+                                    onChange={e => setBetMulti(e.target.checked)}
+                                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                  />
+                                  <span className="text-[11px] font-bold text-red-700">マルチで購入する（軸と相手の着順を入れ替えた組み合わせも全て購入）</span>
+                                </label>
+                              )}
+
+                              {(() => {
+                                const isThree = betType === '3連複' || betType === '3連単';
+                                const isAnchor2 = isThree && betNagashiAnchorCount === 2;
+                                const rows = isAnchor2
+                                  ? [
+                                    { label: '軸馬 1 (1頭のみ選択)', sel: betSel1, setSel: setBetSel1, isSingle: true },
+                                    { label: '軸馬 2 (1頭のみ選択)', sel: betSel2, setSel: setBetSel2, isSingle: true },
+                                    { label: '相手馬 (複数選択可)', sel: betSel3, setSel: setBetSel3, isSingle: false }
+                                  ]
+                                  : [
+                                    { label: '軸馬 (1頭のみ選択)', sel: betSel1, setSel: setBetSel1, isSingle: true },
+                                    { label: '相手馬 (複数選択可)', sel: betSel2, setSel: setBetSel2, isSingle: false }
+                                  ];
+
+                                return rows.map((row, idx) => (
+                                  <div key={idx} className="border-t border-gray-100 pt-3 first:border-0 first:pt-0">
+                                    <span className="text-[11px] text-gray-400 font-bold block mb-1.5">{row.label}</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {betType === '枠連' ? (
+                                        [1, 2, 3, 4, 5, 6, 7, 8].map(waku => {
+                                          const wStr = String(waku);
+                                          const isSelected = row.sel.includes(wStr);
+                                          return (
+                                            <button
+                                              key={waku}
+                                              type="button"
+                                              onClick={() => {
+                                                if (row.isSingle) {
+                                                  row.setSel(isSelected ? [] : [wStr]);
+                                                } else {
+                                                  row.setSel(isSelected ? row.sel.filter(v => v !== wStr) : [...row.sel, wStr]);
+                                                }
+                                              }}
+                                              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${isSelected ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
+                                            >
+                                              {waku}
+                                            </button>
+                                          );
+                                        })
+                                      ) : (
+                                        currentHorses.length === 0 ? (
+                                          <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
+                                        ) : (
+                                          currentHorses.map(h => {
+                                            const val = h.number || h.name;
+                                            const isSelected = row.sel.includes(val);
+                                            return (
+                                              <button
+                                                key={h.id}
+                                                type="button"
+                                                onClick={() => {
+                                                  if (row.isSingle) {
+                                                    if (isAnchor2) {
+                                                      if (idx === 0 && betSel2.includes(val)) {
+                                                        alert("同じ馬を両方の軸に指定することはできません。");
+                                                        return;
+                                                      }
+                                                      if (idx === 1 && betSel1.includes(val)) {
+                                                        alert("同じ馬を両方の軸に指定することはできません。");
+                                                        return;
+                                                      }
+                                                    }
+                                                    row.setSel(isSelected ? [] : [val]);
+                                                  } else {
+                                                    if (betSel1.includes(val) || (isAnchor2 && betSel2.includes(val))) {
+                                                      alert("軸に指定されている馬は相手に選択できません。");
+                                                      return;
+                                                    }
+                                                    row.setSel(isSelected ? row.sel.filter(v => v !== val) : [...row.sel, val]);
+                                                  }
+                                                }}
+                                                className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                                              >
+                                                {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                              </button>
+                                            );
+                                          })
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          ) : (betMethod === 'box' || betType === '単勝' || betType === '複勝') ? (
+                            <div className="flex flex-wrap gap-2">
+                              {betType === '枠連' ? (
+                                [1, 2, 3, 4, 5, 6, 7, 8].map(waku => (
+                                  <button
+                                    key={waku}
+                                    type="button"
+                                    onClick={() => toggleSelectHorse(1, String(waku))}
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${betSel1.includes(String(waku)) ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
+                                  >
+                                    {waku}
+                                  </button>
+                                ))
+                              ) : (
+                                currentHorses.length === 0 ? (
+                                  <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
+                                ) : (
+                                  currentHorses.map(h => {
+                                    const val = h.number || h.name;
+                                    const isSelected = betSel1.includes(val);
+                                    return (
+                                      <button
+                                        key={h.id}
+                                        type="button"
+                                        onClick={() => toggleSelectHorse(1, val)}
+                                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                                      >
+                                        {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                      </button>
+                                    );
+                                  })
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-3.5">
+                              {[1, 2, 3].slice(0, (betType === '3連複' || betType === '3連単') ? 3 : 2).map(rowNum => {
+                                const label = betMethod === 'formation'
+                                  ? `${rowNum}頭目 (軸 / 相手)`
+                                  : (betType === '馬単' || betType === '3連単')
+                                    ? `${rowNum}着馬`
+                                    : `${rowNum}頭目`;
+                                const sel = [null, betSel1, betSel2, betSel3][rowNum];
+                                return (
+                                  <div key={rowNum} className="border-t border-gray-100 pt-2 first:border-0 first:pt-0">
+                                    <span className="text-[11px] text-gray-400 font-bold block mb-1.5">{label}</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {betType === '枠連' ? (
+                                        [1, 2, 3, 4, 5, 6, 7, 8].map(waku => {
+                                          const isSelected = sel.includes(String(waku));
+                                          return (
+                                            <button
+                                              key={waku}
+                                              type="button"
+                                              onClick={() => toggleSelectHorse(rowNum, String(waku))}
+                                              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${isSelected ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
+                                            >
+                                              {waku}
+                                            </button>
+                                          );
+                                        })
+                                      ) : (
+                                        currentHorses.length === 0 ? (
+                                          <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
+                                        ) : (
+                                          currentHorses.map(h => {
+                                            const val = h.number || h.name;
+                                            const isSelected = sel.includes(val);
+                                            return (
+                                              <button
+                                                key={h.id}
+                                                type="button"
+                                                onClick={() => toggleSelectHorse(rowNum, val)}
+                                                className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                                              >
+                                                {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
+                                              </button>
+                                            );
+                                          })
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 1点あたり金額 */}
+                        <div className="border-t border-gray-100 pt-3">
+                          <span className="text-xs text-gray-400 font-bold block mb-2">1点あたりの金額 (円)</span>
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <button
+                              type="button"
+                              onClick={() => setBetAmountPerBet(prev => {
+                                const current = parseInt(prev) || 0;
+                                const next = current - betAmountStep;
+                                return next < 0 ? '0' : String(next);
+                              })}
+                              className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600 transition-colors"
+                            >
+                              ー
+                            </button>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={betAmountPerBet || ''}
+                              onChange={e => setBetAmountPerBet(e.target.value)}
+                              className="flex-1 border border-gray-200 rounded-xl p-2 text-center text-base font-bold outline-none focus:border-green-600 bg-gray-50 h-10"
+                              placeholder="100"
+                              min="0"
+                              step="100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setBetAmountPerBet(prev => {
+                                const current = parseInt(prev) || 0;
+                                return String(current + betAmountStep);
+                              })}
+                              className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600 transition-colors"
+                            >
+                              ＋
+                            </button>
+                            <span className="self-center font-bold text-gray-500 text-xs ml-1">円</span>
+                          </div>
+                          <div className="space-y-2.5 text-[10px] min-[360px]:text-xs font-bold">
+                            <div>
+                              <span className="text-[9px] text-gray-400 block mb-1">金額指定 (直接設定)</span>
+                              <div className="grid grid-cols-6 gap-1">
+                                {[100, 200, 300, 500, 1000].map(amt => (
+                                  <button
+                                    key={amt}
+                                    type="button"
+                                    onClick={() => setBetAmountPerBet(String(amt))}
+                                    className="py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors text-center text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px]"
+                                  >
+                                    {amt.toLocaleString()}円
+                                  </button>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => setBetAmountPerBet('')}
+                                  className="py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-center text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px]"
+                                >
+                                  クリア
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[9px] text-gray-400 block mb-1">＋ーボタンの調整単位</span>
+                              <div className="flex gap-1">
+                                {[100, 500, 1000].map(step => (
+                                  <button
+                                    key={step}
+                                    type="button"
+                                    onClick={() => setBetAmountStep(step)}
+                                    className={`px-3 py-1.5 rounded-lg border transition-colors ${betAmountStep === step
+                                        ? 'bg-green-600 text-white border-green-600'
+                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                      }`}
+                                  >
+                                    {step.toLocaleString()}円ずつ
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                          <button onClick={() => handleDeleteHorse(activeRace.id, horse.id)} className="text-gray-300 hover:text-red-500 p-2 flex-shrink-0 transition-colors"><Trash2 size={16} /></button>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
 
-                <form onSubmit={handleAddHorse} className="mt-6 flex gap-2">
-                  <input 
-                    type="number" 
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={newHorseNum} 
-                    onChange={e => setNewHorseNum(e.target.value)} 
-                    placeholder="番" 
-                    className="w-16 border border-gray-200 rounded-xl p-2 text-center text-sm outline-none focus:border-green-600 bg-gray-50" 
-                    min="1" 
-                    max="18" 
-                  />
-                  <input type="text" value={newHorseName} onChange={e => setNewHorseName(e.target.value)} placeholder="馬名を手動追加" className="flex-1 border border-gray-200 rounded-xl p-2 text-sm outline-none focus:border-green-600 bg-gray-50" />
-                  <button type="submit" disabled={!newHorseName.trim()} className="bg-gray-800 text-white px-4 rounded-xl disabled:opacity-50 text-sm font-bold"><Plus size={16}/></button>
-                </form>
-              </div>
-            ) : (
-              <div className="space-y-6 animate-fade-in text-sm pb-16">
-                
-                {/* 1. 買い目簡単登録 / 編集 */}
-                <form 
-                  id="bet-form-container" 
-                  onSubmit={e => handleSaveBet(activeRace.id, e)} 
-                  className={`p-4 rounded-2xl border shadow-sm transition-all duration-200 ${
-                    editingBetId 
-                      ? 'bg-amber-50/30 border-amber-300 ring-2 ring-amber-200' 
-                      : 'bg-white border-gray-200'
-                  }`}
-                >
-                  <div 
-                    onClick={() => setIsAddBetOpen(!isAddBetOpen)}
-                    className="flex justify-between items-center cursor-pointer select-none py-1"
-                  >
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-gray-800 flex items-center gap-1.5">
-                        {editingBetId ? '✏️ 買い目を編集' : '🎫 買い目簡単登録'}
-                      </h3>
-                      {editingBetId && (
-                        <span className="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-200 animate-fade-in">
-                          編集中
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-gray-400">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="18" 
-                        height="18" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2.5" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        className={`transition-transform duration-200 ${isAddBetOpen ? 'rotate-180' : ''}`}
-                      >
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </span>
-                  </div>
-                  
-                  {isAddBetOpen && (
-                    <div className="space-y-4 mt-4 animate-fade-in">
-                  
-                  {/* 式別 */}
-                  <div>
-                    <span className="text-xs text-gray-400 font-bold block mb-2">式別</span>
-                    <div className="grid grid-cols-4 gap-1.5 text-xs font-bold">
-                      {['単勝', '複勝', '枠連', '馬連', '馬単', 'ワイド', '3連複', '3連単'].map(t => (
-                        <button 
-                          key={t} 
-                          type="button" 
-                          onClick={() => handleSelectBetType(t)} 
-                          className={`py-2 rounded-lg border text-center transition-colors ${betType === t ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                        {/* プレビュー・追加/更新ボタン */}
+                        <div className={`border-t pt-3 flex justify-between items-center -mx-4 -mb-4 p-4 rounded-b-2xl transition-colors ${editingBetId ? 'border-amber-200 bg-amber-50/70' : 'border-gray-100 bg-green-50/50'
+                          }`}>
+                          <div className="text-xs">
+                            <p className="text-gray-500 font-bold">買い目点数: <span className="text-base text-gray-800 font-extrabold">{combinationCount}</span> 点</p>
+                            <p className="text-gray-500 font-bold">合計金額: <span className={`text-base font-extrabold ${editingBetId ? 'text-amber-800' : 'text-green-700'}`}>{totalAmountPreview.toLocaleString()}円</span></p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {editingBetId && (
+                              <button
+                                type="button"
+                                onClick={handleCancelEditBet}
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 px-3.5 rounded-xl text-xs transition-colors"
+                              >
+                                キャンセル
+                              </button>
+                            )}
+                            <button
+                              type="submit"
+                              disabled={combinationCount <= 0}
+                              className={`font-bold py-2.5 px-5 rounded-xl text-xs disabled:opacity-40 shadow transition-colors ${editingBetId
+                                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                                }`}
+                            >
+                              {editingBetId ? '買い目を更新' : '買い目に追加'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </form>
 
-                  {/* 買い方 (単複以外) */}
-                  {betType !== '単勝' && betType !== '複勝' && (() => {
-                    const isOrderType = betType === '馬単' || betType === '3連単';
-                    const methods = isOrderType 
-                      ? ['normal', 'box', 'formation', 'nagashi', 'multi'] 
-                      : ['normal', 'box', 'formation', 'nagashi'];
-                    const currentActiveMethod = (betMethod === 'nagashi' && betMulti) ? 'multi' : betMethod;
+                  {/* 2. 登録済み買い目リスト */}
+                  {(() => {
+                    const winProbs = getWinProbabilities(activeRace.horses || []);
+                    const hasAnyOdds = Object.keys(winProbs).length > 0;
+
+                    // 全組み合わせのシミュレーション集計
+                    let allCombs = [];
+                    currentBets.forEach(bet => {
+                      const combList = expandBet(bet, activeRace.result);
+                      combList.forEach(c => {
+                        const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
+                        const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
+                        const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
+                        allCombs.push({
+                          bet,
+                          comb: c,
+                          estOdds,
+                          payout,
+                          isTrigami,
+                          isHit: c.isHit
+                        });
+                      });
+                    });
+
+                    const oddsList = allCombs.map(item => item.estOdds).filter(o => typeof o === 'number' && o > 0);
+                    const compositeOdds = calculateCompositeOdds(oddsList);
+                    const payouts = allCombs.map(item => item.payout).filter(p => typeof p === 'number' && p > 0);
+                    const minPayout = payouts.length > 0 ? Math.min(...payouts) : null;
+                    const maxPayout = payouts.length > 0 ? Math.max(...payouts) : null;
+                    const trigamiCount = allCombs.filter(item => item.isTrigami).length;
 
                     return (
-                      <div>
-                        <span className="text-xs text-gray-400 font-bold block mb-2">買い方</span>
-                        <div className={`grid ${methods.length === 5 ? 'grid-cols-5' : 'grid-cols-4'} gap-1 font-semibold`}>
-                          {methods.map(m => {
-                            const label = m === 'normal' ? '通常' : m === 'box' ? 'ボックス' : m === 'formation' ? 'フォーメ' : m === 'nagashi' ? '流し' : 'マルチ';
-                            const isActive = currentActiveMethod === m;
-                            return (
-                              <button 
-                                key={m} 
-                                type="button" 
-                                onClick={() => handleSelectBetMethod(m)} 
-                                className={`py-2 px-1 rounded-lg border text-center transition-colors whitespace-nowrap text-xs font-bold ${
-                                  isActive 
-                                    ? (m === 'multi' ? 'bg-red-600 text-white border-red-600 shadow-sm' : 'bg-green-600 text-white border-green-600 shadow-sm') 
-                                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            );
-                          })}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-bold text-gray-800 flex items-center gap-1.5">📋 登録済みの買い目</h3>
+                          {hasAnyOdds && compositeOdds && (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold px-2 py-0.5 rounded-lg shadow-sm">
+                              合成: <span className="text-xs text-emerald-800">{compositeOdds}</span>倍
+                            </span>
+                          )}
                         </div>
+
+                        {currentBets.length === 0 ? (
+                          <div className="text-center py-8 bg-white border border-gray-100 border-dashed rounded-2xl">
+                            <p className="text-gray-400 text-xs font-medium">登録された買い目はありません</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {currentBets.map((bet) => {
+                              const combList = expandBet(bet, activeRace.result);
+                              const isBetHit = combList.some(c => c.isHit);
+
+                              // 1点買い目のオッズ・払戻金計算
+                              const singleComb = combList.length === 1 ? combList[0] : null;
+                              const singleEstOdds = singleComb ? estimateCombinationOdds(bet.type, singleComb.text, winProbs) : null;
+                              const singlePayout = singleEstOdds ? Math.round((bet.amountPerBet || 0) * singleEstOdds) : null;
+                              const singleIsTrigami = (singlePayout !== null && totalBetsAmount > 0) ? (singlePayout < totalBetsAmount) : false;
+
+                              return (
+                                <div
+                                  key={bet.id}
+                                  className={`p-3 rounded-xl border shadow-sm flex flex-col gap-1.5 transition-all ${editingBetId === bet.id
+                                      ? 'bg-amber-50/40 border-amber-300 ring-2 ring-amber-200'
+                                      : isBetHit
+                                        ? 'bg-green-50/40 border-green-200 ring-1 ring-green-100'
+                                        : 'bg-white border-gray-100'
+                                    }`}
+                                >
+                                  {/* 上段: タグ情報 + 金額 + 操作ボタン */}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                      {isBetHit && (
+                                        <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded shadow-sm">
+                                          🎯 的中
+                                        </span>
+                                      )}
+                                      {editingBetId === bet.id && (
+                                        <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.2 rounded border border-amber-200">
+                                          編集中
+                                        </span>
+                                      )}
+                                      <span className="bg-green-50 text-green-700 text-[10px] font-bold px-1.5 py-0.2 rounded border border-green-100">
+                                        {bet.type}
+                                      </span>
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${bet.multi ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-100 text-gray-600'}`}>
+                                        {bet.method === 'normal' ? '通常' : bet.method === 'box' ? 'ボックス' : bet.method === 'formation' ? 'フォーメ' : bet.multi ? 'マルチ' : '流し'}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400 font-medium">
+                                        {bet.combinationCount}点×{bet.amountPerBet}円
+                                      </span>
+                                    </div>
+                                    <div className="text-right flex-shrink-0 flex items-center gap-1">
+                                      <span className="text-xs font-extrabold text-gray-800 mr-0.5">
+                                        {(bet.totalAmount || 0).toLocaleString()}円
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEditBet(bet)}
+                                        title="買い目を編集"
+                                        className={`p-1 rounded-full transition-colors ${editingBetId === bet.id
+                                            ? 'text-amber-600 bg-amber-100'
+                                            : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                                          }`}
+                                      >
+                                        <Edit2 size={15} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteBet(activeRace.id, bet.id)}
+                                        title="買い目を削除"
+                                        className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-full transition-colors"
+                                      >
+                                        <Trash2 size={15} />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* 中段: 馬番号・組み合わせテキスト */}
+                                  <div className="text-sm font-bold text-gray-800">
+                                    {renderBetHorses(bet, activeRace.result)}
+                                  </div>
+
+                                  {/* 1点買い目のオッズ・想定払戻表示 */}
+                                  {singleEstOdds && (
+                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 pt-0.5">
+                                      <span>推計 <span className="text-gray-800 font-extrabold">{singleEstOdds}</span>倍</span>
+                                      <span className="text-gray-300">→</span>
+                                      <span className="text-emerald-700 font-extrabold">{singlePayout.toLocaleString()}円</span>
+                                      {singleIsTrigami ? (
+                                        <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 px-1 rounded font-extrabold">
+                                          ⚠️ ガミ
+                                        </span>
+                                      ) : totalBetsAmount > 0 && (
+                                        <span className="text-[10px] text-emerald-600 font-extrabold">
+                                          (+{((singlePayout / totalBetsAmount) * 100).toFixed(0)}%)
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* 分解組み合わせリスト（複数点の場合） */}
+                                  {combList.length > 1 && (
+                                    <div className="flex flex-wrap gap-1 pt-1.5 border-t border-gray-100 text-[10px] font-bold">
+                                      {combList.map((c, idx) => {
+                                        const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
+                                        const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
+                                        const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
+
+                                        return (
+                                          <span
+                                            key={idx}
+                                            className={`px-1.5 py-0.5 rounded border transition-colors flex items-center gap-1 ${c.isHit
+                                                ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                                                : isTrigami
+                                                  ? 'bg-amber-50/80 text-amber-900 border-amber-200'
+                                                  : 'bg-gray-50 text-gray-700 border-gray-200'
+                                              }`}
+                                          >
+                                            <span>{c.isHit ? '🎯 ' : ''}{c.text}</span>
+                                            {estOdds && (
+                                              <span className={`text-[9px] font-extrabold ${c.isHit
+                                                  ? 'text-yellow-200'
+                                                  : isTrigami
+                                                    ? 'text-amber-700'
+                                                    : 'text-emerald-700'
+                                                }`}>
+                                                {estOdds}倍
+                                              </span>
+                                            )}
+                                            {isTrigami && !c.isHit && (
+                                              <span className="text-[8px] bg-amber-200 text-amber-900 px-0.5 rounded font-black">ガミ</span>
+                                            )}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            <div className="bg-gray-100/60 p-2.5 rounded-xl flex justify-between items-center font-bold text-xs">
+                              <span className="text-gray-500">買い目合計:</span>
+                              <span className="text-sm text-gray-800">{totalBetsAmount.toLocaleString()}円</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* オッズ・回収率シミュレーションサマリーカード（買い目一覧の下に配置） */}
+                        {currentBets.length > 0 && (
+                          hasAnyOdds ? (
+                            <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-200/80 p-3 rounded-2xl shadow-sm text-xs space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-emerald-900 flex items-center gap-1.5 text-xs">
+                                  <span className="text-sm">🧮</span> 予想オッズシミュレーション
+                                </span>
+                                {compositeOdds && (
+                                  <span className="font-extrabold text-emerald-800 bg-white/90 border border-emerald-200 px-2 py-0.5 rounded-lg text-[11px] shadow-xs">
+                                    合成 <span className="text-emerald-900 font-black">{compositeOdds}</span>倍
+                                  </span>
+                                )}
+                              </div>
+                              <div className="bg-white/80 border border-emerald-100 rounded-xl p-2.5 space-y-1.5">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-500 font-bold">想定払戻</span>
+                                  <span className="font-black text-gray-800 text-sm">
+                                    {minPayout ? `${minPayout.toLocaleString()}円` : '-'}
+                                    {minPayout !== maxPayout && (
+                                      <>
+                                        <span className="text-gray-400 font-normal mx-1">〜</span>
+                                        {maxPayout ? `${maxPayout.toLocaleString()}円` : '-'}
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-100 font-bold">
+                                  <div className="text-gray-500">
+                                    <span>想定回収率: </span>
+                                    <span className="text-emerald-700 font-black">
+                                      {minPayout && totalBetsAmount > 0 ? `${((minPayout / totalBetsAmount) * 100).toFixed(0)}%` : '-'}
+                                      {minPayout !== maxPayout && maxPayout && totalBetsAmount > 0 ? ` 〜 ${((maxPayout / totalBetsAmount) * 100).toFixed(0)}%` : ''}
+                                    </span>
+                                  </div>
+                                  {totalBetsAmount > 0 && allCombs.length > 0 && (
+                                    <div>
+                                      {trigamiCount > 0 ? (
+                                        <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px] font-black">
+                                          ⚠️ {allCombs.length}点中 {trigamiCount}点トリガミ
+                                        </span>
+                                      ) : (
+                                        <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px] font-black">
+                                          ✨ 全点プラス収支
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-emerald-50/60 border border-emerald-100 px-3 py-2.5 rounded-xl flex items-center gap-2 text-[11px] text-emerald-800 font-medium">
+                              <span className="text-sm">💡</span>
+                              <span>「予想印」タブで各馬の単勝オッズを入れると、予想オッズ・払戻シミュレーションがここに自動表示されます</span>
+                            </div>
+                          )
+                        )}
                       </div>
                     );
                   })()}
 
-                  {/* 馬・枠選択 */}
-                  <div>
-                    <span className="text-xs text-gray-400 font-bold block mb-2">
-                      {betType === '枠連' ? '枠番号' : '馬番号'} の選択
-                    </span>
-
-                    {betMethod === 'nagashi' ? (
-                      <div className="space-y-4">
-                        {(betType === '3連複' || betType === '3連単') && (
-                          <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                            <span className="text-[11px] text-gray-500 font-bold">軸頭数</span>
-                            <div className="flex gap-1 text-[10px] font-bold">
-                              {[1, 2].map(num => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  onClick={() => {
-                                    setBetNagashiAnchorCount(num);
-                                    setBetSel1([]);
-                                    setBetSel2([]);
-                                    setBetSel3([]);
-                                  }}
-                                  className={`px-3 py-1.5 rounded-lg border transition-colors ${betNagashiAnchorCount === num ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                                >
-                                  軸{num}頭
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {(betType === '馬単' || betType === '3連単') && (
-                          <label className="flex items-center gap-2 bg-red-50/50 p-2.5 rounded-xl border border-red-100/50 cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={betMulti} 
-                              onChange={e => setBetMulti(e.target.checked)} 
-                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" 
-                            />
-                            <span className="text-[11px] font-bold text-red-700">マルチで購入する（軸と相手の着順を入れ替えた組み合わせも全て購入）</span>
-                          </label>
-                        )}
-
-                        {(() => {
-                          const isThree = betType === '3連複' || betType === '3連単';
-                          const isAnchor2 = isThree && betNagashiAnchorCount === 2;
-                          const rows = isAnchor2
-                            ? [
-                                { label: '軸馬 1 (1頭のみ選択)', sel: betSel1, setSel: setBetSel1, isSingle: true },
-                                { label: '軸馬 2 (1頭のみ選択)', sel: betSel2, setSel: setBetSel2, isSingle: true },
-                                { label: '相手馬 (複数選択可)', sel: betSel3, setSel: setBetSel3, isSingle: false }
-                              ]
-                            : [
-                                { label: '軸馬 (1頭のみ選択)', sel: betSel1, setSel: setBetSel1, isSingle: true },
-                                { label: '相手馬 (複数選択可)', sel: betSel2, setSel: setBetSel2, isSingle: false }
-                              ];
-
-                          return rows.map((row, idx) => (
-                            <div key={idx} className="border-t border-gray-100 pt-3 first:border-0 first:pt-0">
-                              <span className="text-[11px] text-gray-400 font-bold block mb-1.5">{row.label}</span>
-                              <div className="flex flex-wrap gap-2">
-                                {betType === '枠連' ? (
-                                  [1, 2, 3, 4, 5, 6, 7, 8].map(waku => {
-                                    const wStr = String(waku);
-                                    const isSelected = row.sel.includes(wStr);
-                                    return (
-                                      <button
-                                        key={waku}
-                                        type="button"
-                                        onClick={() => {
-                                          if (row.isSingle) {
-                                            row.setSel(isSelected ? [] : [wStr]);
-                                          } else {
-                                            row.setSel(isSelected ? row.sel.filter(v => v !== wStr) : [...row.sel, wStr]);
-                                          }
-                                        }}
-                                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${isSelected ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
-                                      >
-                                        {waku}
-                                      </button>
-                                    );
-                                  })
-                                ) : (
-                                  currentHorses.length === 0 ? (
-                                    <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
-                                  ) : (
-                                    currentHorses.map(h => {
-                                      const val = h.number || h.name;
-                                      const isSelected = row.sel.includes(val);
-                                      return (
-                                        <button
-                                          key={h.id}
-                                          type="button"
-                                          onClick={() => {
-                                            if (row.isSingle) {
-                                              if (isAnchor2) {
-                                                if (idx === 0 && betSel2.includes(val)) {
-                                                  alert("同じ馬を両方の軸に指定することはできません。");
-                                                  return;
-                                                }
-                                                if (idx === 1 && betSel1.includes(val)) {
-                                                  alert("同じ馬を両方の軸に指定することはできません。");
-                                                  return;
-                                                }
-                                              }
-                                              row.setSel(isSelected ? [] : [val]);
-                                            } else {
-                                              if (betSel1.includes(val) || (isAnchor2 && betSel2.includes(val))) {
-                                                alert("軸に指定されている馬は相手に選択できません。");
-                                                return;
-                                              }
-                                              row.setSel(isSelected ? row.sel.filter(v => v !== val) : [...row.sel, val]);
-                                            }
-                                          }}
-                                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                                        >
-                                          {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
-                                        </button>
-                                      );
-                                    })
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                    ) : (betMethod === 'box' || betType === '単勝' || betType === '複勝') ? (
-                      <div className="flex flex-wrap gap-2">
-                        {betType === '枠連' ? (
-                          [1, 2, 3, 4, 5, 6, 7, 8].map(waku => (
-                            <button
-                              key={waku}
-                              type="button"
-                              onClick={() => toggleSelectHorse(1, String(waku))}
-                              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${betSel1.includes(String(waku)) ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
-                            >
-                              {waku}
-                            </button>
-                          ))
-                        ) : (
-                          currentHorses.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
-                          ) : (
-                            currentHorses.map(h => {
-                              const val = h.number || h.name;
-                              const isSelected = betSel1.includes(val);
-                              return (
-                                <button
-                                  key={h.id}
-                                  type="button"
-                                  onClick={() => toggleSelectHorse(1, val)}
-                                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                                >
-                                  {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
-                                </button>
-                              );
-                            })
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-3.5">
-                        {[1, 2, 3].slice(0, (betType === '3連複' || betType === '3連単') ? 3 : 2).map(rowNum => {
-                          const label = betMethod === 'formation' 
-                            ? `${rowNum}頭目 (軸 / 相手)` 
-                            : (betType === '馬単' || betType === '3連単') 
-                              ? `${rowNum}着馬` 
-                              : `${rowNum}頭目`;
-                          const sel = [null, betSel1, betSel2, betSel3][rowNum];
-                          return (
-                            <div key={rowNum} className="border-t border-gray-100 pt-2 first:border-0 first:pt-0">
-                              <span className="text-[11px] text-gray-400 font-bold block mb-1.5">{label}</span>
-                              <div className="flex flex-wrap gap-2">
-                                {betType === '枠連' ? (
-                                  [1, 2, 3, 4, 5, 6, 7, 8].map(waku => {
-                                    const isSelected = sel.includes(String(waku));
-                                    return (
-                                      <button
-                                        key={waku}
-                                        type="button"
-                                        onClick={() => toggleSelectHorse(rowNum, String(waku))}
-                                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border-2 transition-all ${isSelected ? 'ring-2 ring-green-600 ring-offset-2 scale-105' : 'opacity-80'} ${WAKU_COLORS[waku]}`}
-                                      >
-                                        {waku}
-                                      </button>
-                                    );
-                                  })
-                                ) : (
-                                  currentHorses.length === 0 ? (
-                                    <p className="text-xs text-gray-400 italic">先に予想印タブで馬を登録してください</p>
-                                  ) : (
-                                    currentHorses.map(h => {
-                                      const val = h.number || h.name;
-                                      const isSelected = sel.includes(val);
-                                      return (
-                                        <button
-                                          key={h.id}
-                                          type="button"
-                                          onClick={() => toggleSelectHorse(rowNum, val)}
-                                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isSelected ? 'bg-green-600 text-white border-green-600 ring-1 ring-green-600' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                                        >
-                                          {h.number ? `${h.number}.` : ''}{h.name}{h.paddockGood ? '✨' : ''} {h.mark !== '-' ? `(${h.mark})` : ''}
-                                        </button>
-                                      );
-                                    })
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 1点あたり金額 */}
-                  <div className="border-t border-gray-100 pt-3">
-                    <span className="text-xs text-gray-400 font-bold block mb-2">1点あたりの金額 (円)</span>
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <button
-                        type="button"
-                        onClick={() => setBetAmountPerBet(prev => {
-                          const current = parseInt(prev) || 0;
-                          const next = current - betAmountStep;
-                          return next < 0 ? '0' : String(next);
-                        })}
-                        className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600 transition-colors"
-                      >
-                        ー
-                      </button>
-                      <input 
-                        type="number" 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={betAmountPerBet || ''} 
-                        onChange={e => setBetAmountPerBet(e.target.value)} 
-                        className="flex-1 border border-gray-200 rounded-xl p-2 text-center text-base font-bold outline-none focus:border-green-600 bg-gray-50 h-10"
-                        placeholder="100"
-                        min="0" 
-                        step="100"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setBetAmountPerBet(prev => {
-                          const current = parseInt(prev) || 0;
-                          return String(current + betAmountStep);
-                        })}
-                        className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-600 transition-colors"
-                      >
-                        ＋
-                      </button>
-                      <span className="self-center font-bold text-gray-500 text-xs ml-1">円</span>
-                    </div>
-                    <div className="space-y-2.5 text-[10px] min-[360px]:text-xs font-bold">
-                      <div>
-                        <span className="text-[9px] text-gray-400 block mb-1">金額指定 (直接設定)</span>
-                        <div className="grid grid-cols-6 gap-1">
-                          {[100, 200, 300, 500, 1000].map(amt => (
-                            <button
-                              key={amt}
-                              type="button"
-                              onClick={() => setBetAmountPerBet(String(amt))}
-                              className="py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors text-center text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px]"
-                            >
-                              {amt.toLocaleString()}円
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => setBetAmountPerBet('')}
-                            className="py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors text-center text-[8px] min-[360px]:text-[9px] min-[400px]:text-[10px]"
-                          >
-                            クリア
-                          </button>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-gray-400 block mb-1">＋ーボタンの調整単位</span>
-                        <div className="flex gap-1">
-                          {[100, 500, 1000].map(step => (
-                            <button
-                              key={step}
-                              type="button"
-                              onClick={() => setBetAmountStep(step)}
-                              className={`px-3 py-1.5 rounded-lg border transition-colors ${
-                                betAmountStep === step
-                                  ? 'bg-green-600 text-white border-green-600'
-                                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                              }`}
-                            >
-                              {step.toLocaleString()}円ずつ
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* プレビュー・追加/更新ボタン */}
-                  <div className={`border-t pt-3 flex justify-between items-center -mx-4 -mb-4 p-4 rounded-b-2xl transition-colors ${
-                    editingBetId ? 'border-amber-200 bg-amber-50/70' : 'border-gray-100 bg-green-50/50'
-                  }`}>
-                    <div className="text-xs">
-                      <p className="text-gray-500 font-bold">買い目点数: <span className="text-base text-gray-800 font-extrabold">{combinationCount}</span> 点</p>
-                      <p className="text-gray-500 font-bold">合計金額: <span className={`text-base font-extrabold ${editingBetId ? 'text-amber-800' : 'text-green-700'}`}>{totalAmountPreview.toLocaleString()}円</span></p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {editingBetId && (
-                        <button
-                          type="button"
-                          onClick={handleCancelEditBet}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 px-3.5 rounded-xl text-xs transition-colors"
+                  {/* 3. 確定着順入力 (最下部へ配置) */}
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-1.5">🏁 確定着順入力</h3>
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 text-xs text-gray-500 font-bold flex-shrink-0 text-right">1着:</span>
+                        <select
+                          value={activeRace.result?.first || ''}
+                          onChange={e => handleUpdateRaceResult(activeRace.id, 'first', e.target.value)}
+                          className="flex-1 border border-gray-200 rounded-xl p-2 outline-none focus:border-green-600 bg-gray-50 font-bold text-gray-700 text-xs"
                         >
-                          キャンセル
-                        </button>
-                      )}
-                      <button
-                        type="submit"
-                        disabled={combinationCount <= 0}
-                        className={`font-bold py-2.5 px-5 rounded-xl text-xs disabled:opacity-40 shadow transition-colors ${
-                          editingBetId 
-                            ? 'bg-amber-600 hover:bg-amber-700 text-white' 
-                            : 'bg-green-600 hover:bg-green-700 text-white'
-                        }`}
-                      >
-                        {editingBetId ? '買い目を更新' : '買い目に追加'}
-                      </button>
+                          <option value="">未設定</option>
+                          {Array.isArray(activeRace.horses) && [...activeRace.horses]
+                            .filter(h => h.number)
+                            .sort((a, b) => parseInt(a.number) - parseInt(b.number))
+                            .map(h => (
+                              <option key={h.id} value={h.number}>{h.number}番: {h.name}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 text-xs text-gray-500 font-bold flex-shrink-0 text-right">2着:</span>
+                        <select
+                          value={activeRace.result?.second || ''}
+                          onChange={e => handleUpdateRaceResult(activeRace.id, 'second', e.target.value)}
+                          className="flex-1 border border-gray-200 rounded-xl p-2 outline-none focus:border-green-600 bg-gray-50 font-bold text-gray-700 text-xs"
+                        >
+                          <option value="">未設定</option>
+                          {Array.isArray(activeRace.horses) && [...activeRace.horses]
+                            .filter(h => h.number)
+                            .sort((a, b) => parseInt(a.number) - parseInt(b.number))
+                            .map(h => (
+                              <option key={h.id} value={h.number}>{h.number}番: {h.name}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 text-xs text-gray-500 font-bold flex-shrink-0 text-right">3着:</span>
+                        <select
+                          value={activeRace.result?.third || ''}
+                          onChange={e => handleUpdateRaceResult(activeRace.id, 'third', e.target.value)}
+                          className="flex-1 border border-gray-200 rounded-xl p-2 outline-none focus:border-green-600 bg-gray-50 font-bold text-gray-700 text-xs"
+                        >
+                          <option value="">未設定</option>
+                          {Array.isArray(activeRace.horses) && [...activeRace.horses]
+                            .filter(h => h.number)
+                            .sort((a, b) => parseInt(a.number) - parseInt(b.number))
+                            .map(h => (
+                              <option key={h.id} value={h.number}>{h.number}番: {h.name}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
                     </div>
                   </div>
+
+                  {/* 4. レース収支入力 */}
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-1.5">📊 レース収支入力</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-gray-400 font-bold block mb-1">購入金額 (円)</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={activeRace.investment || ''}
+                          onChange={e => handleUpdateRaceBalance(activeRace.id, e.target.value, activeRace.payout || 0)}
+                          className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-green-600 bg-white font-bold text-gray-700 text-sm"
+                          placeholder="0"
+                          min="0"
+                          step="100"
+                        />
+                        {totalBetsAmount > 0 && (
+                          <p className="text-[10px] text-gray-400 mt-1">※買い目合計: {totalBetsAmount.toLocaleString()}円</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-bold block mb-1">払戻金額 (円)</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={activeRace.payout || ''}
+                          onChange={e => handleUpdateRaceBalance(activeRace.id, activeRace.investment || 0, e.target.value)}
+                          className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-green-600 bg-white font-bold text-gray-700 text-sm"
+                          placeholder="0"
+                          min="0"
+                          step="10"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200/60 flex justify-between items-center text-xs font-bold">
+                      <span className="text-gray-500">このレースの収支:</span>
+                      <span className={`text-base font-extrabold ${((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? 'text-blue-600' : ((activeRace.payout || 0) - (activeRace.investment || 0)) < 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                        {((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? '+' : ''}{((activeRace.payout || 0) - (activeRace.investment || 0)).toLocaleString()}円
+                      </span>
+                    </div>
+                  </div>
+
                 </div>
               )}
-            </form>
-
-                {/* 2. 登録済み買い目リスト */}
-                {(() => {
-                  const winProbs = getWinProbabilities(activeRace.horses || []);
-                  const hasAnyOdds = Object.keys(winProbs).length > 0;
-
-                  // 全組み合わせのシミュレーション集計
-                  let allCombs = [];
-                  currentBets.forEach(bet => {
-                    const combList = expandBet(bet, activeRace.result);
-                    combList.forEach(c => {
-                      const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
-                      const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
-                      const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
-                      allCombs.push({
-                        bet,
-                        comb: c,
-                        estOdds,
-                        payout,
-                        isTrigami,
-                        isHit: c.isHit
-                      });
-                    });
-                  });
-
-                  const oddsList = allCombs.map(item => item.estOdds).filter(o => typeof o === 'number' && o > 0);
-                  const compositeOdds = calculateCompositeOdds(oddsList);
-                  const payouts = allCombs.map(item => item.payout).filter(p => typeof p === 'number' && p > 0);
-                  const minPayout = payouts.length > 0 ? Math.min(...payouts) : null;
-                  const maxPayout = payouts.length > 0 ? Math.max(...payouts) : null;
-                  const trigamiCount = allCombs.filter(item => item.isTrigami).length;
-
-                  return (
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-1.5">📋 登録済みの買い目</h3>
-                        {hasAnyOdds && compositeOdds && (
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold px-2 py-0.5 rounded-lg shadow-sm">
-                            合成: <span className="text-xs text-emerald-800">{compositeOdds}</span>倍
-                          </span>
-                        )}
-                      </div>
-
-                      {currentBets.length === 0 ? (
-                        <div className="text-center py-8 bg-white border border-gray-100 border-dashed rounded-2xl">
-                          <p className="text-gray-400 text-xs font-medium">登録された買い目はありません</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {currentBets.map((bet) => {
-                            const combList = expandBet(bet, activeRace.result);
-                            const isBetHit = combList.some(c => c.isHit);
-                            
-                            // 1点買い目のオッズ・払戻金計算
-                            const singleComb = combList.length === 1 ? combList[0] : null;
-                            const singleEstOdds = singleComb ? estimateCombinationOdds(bet.type, singleComb.text, winProbs) : null;
-                            const singlePayout = singleEstOdds ? Math.round((bet.amountPerBet || 0) * singleEstOdds) : null;
-                            const singleIsTrigami = (singlePayout !== null && totalBetsAmount > 0) ? (singlePayout < totalBetsAmount) : false;
-
-                            return (
-                              <div 
-                                key={bet.id} 
-                                className={`p-3 rounded-xl border shadow-sm flex flex-col gap-1.5 transition-all ${
-                                  editingBetId === bet.id
-                                    ? 'bg-amber-50/40 border-amber-300 ring-2 ring-amber-200'
-                                    : isBetHit 
-                                      ? 'bg-green-50/40 border-green-200 ring-1 ring-green-100' 
-                                      : 'bg-white border-gray-100'
-                                }`}
-                              >
-                                {/* 上段: タグ情報 + 金額 + 操作ボタン */}
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex flex-wrap items-center gap-1 min-w-0">
-                                    {isBetHit && (
-                                      <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded shadow-sm">
-                                        🎯 的中
-                                      </span>
-                                    )}
-                                    {editingBetId === bet.id && (
-                                      <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.2 rounded border border-amber-200">
-                                        編集中
-                                      </span>
-                                    )}
-                                    <span className="bg-green-50 text-green-700 text-[10px] font-bold px-1.5 py-0.2 rounded border border-green-100">
-                                      {bet.type}
-                                    </span>
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${bet.multi ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-100 text-gray-600'}`}>
-                                      {bet.method === 'normal' ? '通常' : bet.method === 'box' ? 'ボックス' : bet.method === 'formation' ? 'フォーメ' : bet.multi ? 'マルチ' : '流し'}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400 font-medium">
-                                      {bet.combinationCount}点×{bet.amountPerBet}円
-                                    </span>
-                                  </div>
-                                  <div className="text-right flex-shrink-0 flex items-center gap-1">
-                                    <span className="text-xs font-extrabold text-gray-800 mr-0.5">
-                                      {(bet.totalAmount || 0).toLocaleString()}円
-                                    </span>
-                                    <button 
-                                      type="button"
-                                      onClick={() => handleStartEditBet(bet)} 
-                                      title="買い目を編集"
-                                      className={`p-1 rounded-full transition-colors ${
-                                        editingBetId === bet.id 
-                                          ? 'text-amber-600 bg-amber-100' 
-                                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
-                                      }`}
-                                    >
-                                      <Edit2 size={15} />
-                                    </button>
-                                    <button 
-                                      type="button"
-                                      onClick={() => handleDeleteBet(activeRace.id, bet.id)} 
-                                      title="買い目を削除"
-                                      className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-full transition-colors"
-                                    >
-                                      <Trash2 size={15} />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* 中段: 馬番号・組み合わせテキスト */}
-                                <div className="text-sm font-bold text-gray-800">
-                                  {renderBetHorses(bet, activeRace.result)}
-                                </div>
-
-                                {/* 1点買い目のオッズ・想定払戻表示 */}
-                                {singleEstOdds && (
-                                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 pt-0.5">
-                                    <span>推計 <span className="text-gray-800 font-extrabold">{singleEstOdds}</span>倍</span>
-                                    <span className="text-gray-300">→</span>
-                                    <span className="text-emerald-700 font-extrabold">{singlePayout.toLocaleString()}円</span>
-                                    {singleIsTrigami ? (
-                                      <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 px-1 rounded font-extrabold">
-                                        ⚠️ ガミ
-                                      </span>
-                                    ) : totalBetsAmount > 0 && (
-                                      <span className="text-[10px] text-emerald-600 font-extrabold">
-                                        (+{((singlePayout / totalBetsAmount) * 100).toFixed(0)}%)
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* 分解組み合わせリスト（複数点の場合） */}
-                                {combList.length > 1 && (
-                                  <div className="flex flex-wrap gap-1 pt-1.5 border-t border-gray-100 text-[10px] font-bold">
-                                    {combList.map((c, idx) => {
-                                      const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
-                                      const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
-                                      const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
-
-                                      return (
-                                        <span 
-                                          key={idx} 
-                                          className={`px-1.5 py-0.5 rounded border transition-colors flex items-center gap-1 ${
-                                            c.isHit 
-                                              ? 'bg-red-500 text-white border-red-500 shadow-sm' 
-                                              : isTrigami
-                                                ? 'bg-amber-50/80 text-amber-900 border-amber-200'
-                                                : 'bg-gray-50 text-gray-700 border-gray-200'
-                                          }`}
-                                        >
-                                          <span>{c.isHit ? '🎯 ' : ''}{c.text}</span>
-                                          {estOdds && (
-                                            <span className={`text-[9px] font-extrabold ${
-                                              c.isHit 
-                                                ? 'text-yellow-200' 
-                                                : isTrigami 
-                                                  ? 'text-amber-700' 
-                                                  : 'text-emerald-700'
-                                            }`}>
-                                              {estOdds}倍
-                                            </span>
-                                          )}
-                                          {isTrigami && !c.isHit && (
-                                            <span className="text-[8px] bg-amber-200 text-amber-900 px-0.5 rounded font-black">ガミ</span>
-                                          )}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                          <div className="bg-gray-100/60 p-2.5 rounded-xl flex justify-between items-center font-bold text-xs">
-                            <span className="text-gray-500">買い目合計:</span>
-                            <span className="text-sm text-gray-800">{totalBetsAmount.toLocaleString()}円</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* オッズ・回収率シミュレーションサマリーカード（買い目一覧の下に配置） */}
-                      {currentBets.length > 0 && (
-                        hasAnyOdds ? (
-                          <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-200/80 p-3 rounded-2xl shadow-sm text-xs space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-extrabold text-emerald-900 flex items-center gap-1.5 text-xs">
-                                <span className="text-sm">🧮</span> 予想オッズシミュレーション
-                              </span>
-                              {compositeOdds && (
-                                <span className="font-extrabold text-emerald-800 bg-white/90 border border-emerald-200 px-2 py-0.5 rounded-lg text-[11px] shadow-xs">
-                                  合成 <span className="text-emerald-900 font-black">{compositeOdds}</span>倍
-                                </span>
-                              )}
-                            </div>
-                            <div className="bg-white/80 border border-emerald-100 rounded-xl p-2.5 space-y-1.5">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-gray-500 font-bold">想定払戻</span>
-                                <span className="font-black text-gray-800 text-sm">
-                                  {minPayout ? `${minPayout.toLocaleString()}円` : '-'}
-                                  {minPayout !== maxPayout && (
-                                    <>
-                                      <span className="text-gray-400 font-normal mx-1">〜</span>
-                                      {maxPayout ? `${maxPayout.toLocaleString()}円` : '-'}
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-100 font-bold">
-                                <div className="text-gray-500">
-                                  <span>想定回収率: </span>
-                                  <span className="text-emerald-700 font-black">
-                                    {minPayout && totalBetsAmount > 0 ? `${((minPayout / totalBetsAmount) * 100).toFixed(0)}%` : '-'}
-                                    {minPayout !== maxPayout && maxPayout && totalBetsAmount > 0 ? ` 〜 ${((maxPayout / totalBetsAmount) * 100).toFixed(0)}%` : ''}
-                                  </span>
-                                </div>
-                                {totalBetsAmount > 0 && allCombs.length > 0 && (
-                                  <div>
-                                    {trigamiCount > 0 ? (
-                                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px] font-black">
-                                        ⚠️ {allCombs.length}点中 {trigamiCount}点トリガミ
-                                      </span>
-                                    ) : (
-                                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px] font-black">
-                                        ✨ 全点プラス収支
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="bg-emerald-50/60 border border-emerald-100 px-3 py-2.5 rounded-xl flex items-center gap-2 text-[11px] text-emerald-800 font-medium">
-                            <span className="text-sm">💡</span>
-                            <span>「予想印」タブで各馬の単勝オッズを入れると、予想オッズ・払戻シミュレーションがここに自動表示されます</span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* 3. 確定着順入力 (最下部へ配置) */}
-                <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-1.5">🏁 確定着順入力</h3>
-                  <div className="space-y-2.5">
-                    <div className="flex items-center gap-3">
-                      <span className="w-10 text-xs text-gray-500 font-bold flex-shrink-0 text-right">1着:</span>
-                      <select 
-                        value={activeRace.result?.first || ''}
-                        onChange={e => handleUpdateRaceResult(activeRace.id, 'first', e.target.value)}
-                        className="flex-1 border border-gray-200 rounded-xl p-2 outline-none focus:border-green-600 bg-gray-50 font-bold text-gray-700 text-xs"
-                      >
-                        <option value="">未設定</option>
-                        {Array.isArray(activeRace.horses) && [...activeRace.horses]
-                          .filter(h => h.number)
-                          .sort((a, b) => parseInt(a.number) - parseInt(b.number))
-                          .map(h => (
-                            <option key={h.id} value={h.number}>{h.number}番: {h.name}</option>
-                          ))
-                        }
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="w-10 text-xs text-gray-500 font-bold flex-shrink-0 text-right">2着:</span>
-                      <select 
-                        value={activeRace.result?.second || ''}
-                        onChange={e => handleUpdateRaceResult(activeRace.id, 'second', e.target.value)}
-                        className="flex-1 border border-gray-200 rounded-xl p-2 outline-none focus:border-green-600 bg-gray-50 font-bold text-gray-700 text-xs"
-                      >
-                        <option value="">未設定</option>
-                        {Array.isArray(activeRace.horses) && [...activeRace.horses]
-                          .filter(h => h.number)
-                          .sort((a, b) => parseInt(a.number) - parseInt(b.number))
-                          .map(h => (
-                            <option key={h.id} value={h.number}>{h.number}番: {h.name}</option>
-                          ))
-                        }
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="w-10 text-xs text-gray-500 font-bold flex-shrink-0 text-right">3着:</span>
-                      <select 
-                        value={activeRace.result?.third || ''}
-                        onChange={e => handleUpdateRaceResult(activeRace.id, 'third', e.target.value)}
-                        className="flex-1 border border-gray-200 rounded-xl p-2 outline-none focus:border-green-600 bg-gray-50 font-bold text-gray-700 text-xs"
-                      >
-                        <option value="">未設定</option>
-                        {Array.isArray(activeRace.horses) && [...activeRace.horses]
-                          .filter(h => h.number)
-                          .sort((a, b) => parseInt(a.number) - parseInt(b.number))
-                          .map(h => (
-                            <option key={h.id} value={h.number}>{h.number}番: {h.name}</option>
-                          ))
-                        }
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. レース収支入力 */}
-                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                  <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-1.5">📊 レース収支入力</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-gray-400 font-bold block mb-1">購入金額 (円)</label>
-                      <input 
-                        type="number" 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={activeRace.investment || ''} 
-                        onChange={e => handleUpdateRaceBalance(activeRace.id, e.target.value, activeRace.payout || 0)} 
-                        className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-green-600 bg-white font-bold text-gray-700 text-sm"
-                        placeholder="0"
-                        min="0"
-                        step="100"
-                      />
-                      {totalBetsAmount > 0 && (
-                        <p className="text-[10px] text-gray-400 mt-1">※買い目合計: {totalBetsAmount.toLocaleString()}円</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-400 font-bold block mb-1">払戻金額 (円)</label>
-                      <input 
-                        type="number" 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={activeRace.payout || ''} 
-                        onChange={e => handleUpdateRaceBalance(activeRace.id, activeRace.investment || 0, e.target.value)} 
-                        className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-green-600 bg-white font-bold text-gray-700 text-sm"
-                        placeholder="0"
-                        min="0"
-                        step="10"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-gray-200/60 flex justify-between items-center text-xs font-bold">
-                    <span className="text-gray-500">このレースの収支:</span>
-                    <span className={`text-base font-extrabold ${((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? 'text-blue-600' : ((activeRace.payout || 0) - (activeRace.investment || 0)) < 0 ? 'text-red-500' : 'text-gray-600'}`}>
-                      {((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? '+' : ''}{((activeRace.payout || 0) - (activeRace.investment || 0)).toLocaleString()}円
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-            )}
-          </div>
-        </div>
-        {deleteHistory.length > 0 && (() => {
-          const lastAction = deleteHistory[deleteHistory.length - 1];
-          const countPrefix = deleteHistory.length > 1 ? `(${deleteHistory.length}件) ` : "";
-          return (
-            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-2.5 pl-4 pr-3 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-simple-fade-in select-none">
-              <div className="flex-1 min-w-0 pr-2">
-                <p className="text-xs font-medium text-gray-200 truncate">{countPrefix}{lastAction.message}</p>
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={handleUndo}
-                  className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shadow-sm whitespace-nowrap"
-                >
-                  元に戻す
-                </button>
-                <button 
-                  type="button" 
-                  onClick={(e) => { e.stopPropagation(); setDeleteHistory([]); }}
-                  className="text-gray-400 hover:text-gray-200 p-1.5 rounded-lg transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-              </div>
             </div>
-          );
-        })()}
-      </>
-    );
+          </div>
+          {deleteHistory.length > 0 && (() => {
+            const lastAction = deleteHistory[deleteHistory.length - 1];
+            const countPrefix = deleteHistory.length > 1 ? `(${deleteHistory.length}件) ` : "";
+            return (
+              <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-gray-900/95 text-white py-2.5 pl-4 pr-3 rounded-2xl shadow-xl flex items-center justify-between border border-gray-800 backdrop-blur-md animate-simple-fade-in select-none">
+                <div className="flex-1 min-w-0 pr-2">
+                  <p className="text-xs font-medium text-gray-200 truncate">{countPrefix}{lastAction.message}</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    className="bg-green-600 hover:bg-green-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-xs transition-colors shadow-sm whitespace-nowrap"
+                  >
+                    元に戻す
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setDeleteHistory([]); }}
+                    className="text-gray-400 hover:text-gray-200 p-1.5 rounded-lg transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </>
+      );
     }
-    
+
     const fallbackUi = document.getElementById('fallback-ui');
     if (fallbackUi) fallbackUi.style.display = 'none';
 
@@ -2897,4 +2976,5 @@
     root.render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
 </body>
+
 </html>
