@@ -265,125 +265,71 @@
       return [[], [], []];
     };
 
-    // 出走馬リストから各馬の勝率分布を計算 (Harvilleモデルベース)
-    const getWinProbabilities = (horses = []) => {
+    // 出走馬リストから各馬の単勝オッズ辞書を作成
+    const getHorseOddsMap = (horses = []) => {
       const validHorses = (Array.isArray(horses) ? horses : []).filter(h => h && h.number);
-      if (validHorses.length === 0) return {};
-
       const rawOdds = {};
-      let totalInvOdds = 0;
-      let countWithOdds = 0;
-
       validHorses.forEach(h => {
         const val = parseFloat(h.odds);
         if (!isNaN(val) && val > 0) {
           rawOdds[String(h.number)] = val;
-          totalInvOdds += 1 / val;
-          countWithOdds++;
         }
       });
-
-      const probs = {};
-      if (countWithOdds === 0) {
-        const uniform = 1 / validHorses.length;
-        validHorses.forEach(h => { probs[String(h.number)] = uniform; });
-        return probs;
-      }
-
-      const remainingProb = Math.max(0.05, 1 - (totalInvOdds * 0.8));
-      const withoutOdds = validHorses.filter(h => !rawOdds[String(h.number)]);
-      const missingEach = withoutOdds.length > 0 ? (remainingProb / withoutOdds.length) : 0;
-
-      let sumProbs = 0;
-      validHorses.forEach(h => {
-        const num = String(h.number);
-        if (rawOdds[num]) {
-          probs[num] = (1 / rawOdds[num]) / totalInvOdds;
-        } else {
-          probs[num] = missingEach;
-        }
-        sumProbs += probs[num];
-      });
-
-      if (sumProbs > 0) {
-        validHorses.forEach(h => {
-          const num = String(h.number);
-          probs[num] = probs[num] / sumProbs;
-        });
-      }
-      return probs;
+      return rawOdds;
     };
 
-    // 組み合わせ文字列 (例: "1", "1 - 2", "1 ➔ 2 ➔ 3") と式別から予想オッズを計算
-    const estimateCombinationOdds = (type, combStr, winProbs) => {
-      if (!winProbs || Object.keys(winProbs).length === 0 || !combStr) return null;
+    // 組み合わせ文字列 (例: "1", "1 - 2", "1 ➔ 2 ➔ 3") と式別から実戦予想オッズを計算
+    // JRAプール相関に適合した幾何平均べき乗モデル (Favorite-Longshot Bias補正済)
+    const estimateCombinationOdds = (type, combStr, oddsMap) => {
+      if (!oddsMap || Object.keys(oddsMap).length === 0 || !combStr) return null;
       const nums = combStr.match(/\d+/g);
       if (!nums || nums.length === 0) return null;
 
-      const p1 = winProbs[nums[0]] || 0.01;
-      const p2 = nums[1] ? (winProbs[nums[1]] || 0.01) : 0;
-      const p3 = nums[2] ? (winProbs[nums[2]] || 0.01) : 0;
+      const o1 = oddsMap[nums[0]];
+      const o2 = nums[1] ? oddsMap[nums[1]] : null;
+      const o3 = nums[2] ? oddsMap[nums[2]] : null;
 
-      let prob = 0;
-      let takeout = 0.75;
+      // 買い目に含まれる馬の単勝オッズ（未入力時は20倍基準で補完）
+      const o1Val = (typeof o1 === 'number' && o1 > 0) ? o1 : 20.0;
+      const o2Val = (typeof o2 === 'number' && o2 > 0) ? o2 : 20.0;
+      const o3Val = (typeof o3 === 'number' && o3 > 0) ? o3 : 20.0;
+
+      let est = 0;
 
       if (type === '単勝') {
-        prob = p1;
-        takeout = 0.80;
+        est = o1Val;
       } else if (type === '複勝') {
-        prob = Math.min(0.95, p1 * 2.8);
-        takeout = 0.80;
-      } else if (type === '馬連') {
-        const denom1 = Math.max(0.001, 1 - p1);
-        const denom2 = Math.max(0.001, 1 - p2);
-        prob = p1 * (p2 / denom1) + p2 * (p1 / denom2);
-        takeout = 0.775;
+        est = 1.0 + (o1Val - 1.0) * 0.25;
+      } else if (type === '馬連' || type === '枠連') {
+        const prod = o1Val * o2Val;
+        est = Math.pow(prod, 0.73) * 0.65;
       } else if (type === 'ワイド') {
-        const denom1 = Math.max(0.001, 1 - p1);
-        const denom2 = Math.max(0.001, 1 - p2);
-        const exactaProb = p1 * (p2 / denom1) + p2 * (p1 / denom2);
-        prob = Math.min(0.90, exactaProb * 3.0);
-        takeout = 0.775;
+        const prod = o1Val * o2Val;
+        est = Math.pow(prod, 0.65) * 0.28;
       } else if (type === '馬単') {
-        const denom = Math.max(0.001, 1 - p1);
-        prob = p1 * (p2 / denom);
-        takeout = 0.75;
+        const prod = o1Val * o2Val;
+        const base = Math.pow(prod, 0.73) * 0.65;
+        const orderFactor = o1Val > o2Val ? 2.2 : 1.7;
+        est = base * orderFactor;
       } else if (type === '3連複') {
-        const d1 = Math.max(0.001, 1 - p1);
-        const d2 = Math.max(0.001, 1 - p2);
-        const d3 = Math.max(0.001, 1 - p3);
-        const d12 = Math.max(0.001, 1 - p1 - p2);
-        const d13 = Math.max(0.001, 1 - p1 - p3);
-        const d23 = Math.max(0.001, 1 - p2 - p3);
-
-        const trifecta123 = p1 * (p2 / d1) * (p3 / d12);
-        const trifecta132 = p1 * (p3 / d1) * (p2 / d13);
-        const trifecta213 = p2 * (p1 / d2) * (p3 / d12);
-        const trifecta231 = p2 * (p3 / d2) * (p1 / d23);
-        const trifecta312 = p3 * (p1 / d3) * (p2 / d13);
-        const trifecta321 = p3 * (p2 / d3) * (p1 / d23);
-
-        prob = trifecta123 + trifecta132 + trifecta213 + trifecta231 + trifecta312 + trifecta321;
-        takeout = 0.75;
+        const prod = o1Val * o2Val * o3Val;
+        est = Math.pow(prod, 0.67);
       } else if (type === '3連単') {
-        const denom1 = Math.max(0.001, 1 - p1);
-        const denom2 = Math.max(0.001, 1 - p1 - p2);
-        prob = p1 * (p2 / denom1) * (p3 / denom2);
-        takeout = 0.725;
-      } else if (type === '枠連') {
-        const denom = Math.max(0.001, 1 - p1);
-        prob = (p1 * (p2 / denom) + p2 * (p1 / Math.max(0.001, 1 - p2))) * 1.1;
-        takeout = 0.775;
+        const prod = o1Val * o2Val * o3Val;
+        const sanrenpuku = Math.pow(prod, 0.67);
+        let orderFactor = 5.5;
+        if (o1Val <= o2Val && o2Val <= o3Val) orderFactor = 4.0;
+        else if (o1Val >= o2Val && o2Val >= o3Val) orderFactor = 7.5;
+        est = sanrenpuku * orderFactor;
       }
 
-      if (prob <= 0) return null;
-      const rawOdds = takeout / prob;
-      if (rawOdds >= 100) {
-        return Math.round(rawOdds);
-      } else if (rawOdds >= 10) {
-        return Math.round(rawOdds * 10) / 10;
+      if (est <= 0) return null;
+      if (est >= 1000) {
+        return Math.round(est * 10) / 10;
+      } else if (est >= 100) {
+        return Math.round(est * 10) / 10;
       } else {
-        return Math.max(1.0, Math.round(rawOdds * 10) / 10);
+        return Math.max(1.0, Math.round(est * 10) / 10);
       }
     };
 
@@ -2454,15 +2400,15 @@
 
                 {/* 2. 登録済み買い目リスト */}
                 {(() => {
-                  const winProbs = getWinProbabilities(activeRace.horses || []);
-                  const hasAnyOdds = (activeRace.horses || []).some(h => parseFloat(h.odds) > 0);
+                  const oddsMap = getHorseOddsMap(activeRace.horses || []);
+                  const hasAnyOdds = Object.keys(oddsMap).length > 0;
 
                   // 全組み合わせのシミュレーション集計
                   let allCombs = [];
                   currentBets.forEach(bet => {
                     const combList = expandBet(bet, activeRace.result);
                     combList.forEach(c => {
-                      const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
+                      const estOdds = estimateCombinationOdds(bet.type, c.text, oddsMap);
                       const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
                       const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
                       allCombs.push({
@@ -2489,7 +2435,7 @@
                         <h3 className="font-bold text-gray-800 flex items-center gap-1.5">📋 登録済みの買い目</h3>
                         {hasAnyOdds && compositeOdds && (
                           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold px-2 py-0.5 rounded-lg shadow-sm">
-                            合成オッズ: <span className="text-xs text-emerald-800">{compositeOdds}</span> 倍
+                            合成: <span className="text-xs text-emerald-800">{compositeOdds}</span>倍
                           </span>
                         )}
                       </div>
@@ -2497,53 +2443,55 @@
                       {/* オッズ・回収率シミュレーションサマリーカード */}
                       {currentBets.length > 0 && (
                         hasAnyOdds ? (
-                          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-3.5 rounded-2xl shadow-sm border border-slate-700">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
-                                <span>🧮</span> 予想オッズ・回収率シミュレーション
+                          <div className="bg-slate-900 text-white p-3 rounded-xl shadow-sm border border-slate-800 text-xs">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-bold text-slate-300 flex items-center gap-1 text-[11px]">
+                                <span>🧮</span> 予想オッズシミュレーション
                               </span>
                               {compositeOdds && (
-                                <span className="text-xs font-extrabold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                                <span className="font-extrabold text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded text-[10px] border border-emerald-500/30">
                                   合成 {compositeOdds}倍
                                 </span>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-700/80">
+                            <div className="flex flex-wrap items-center justify-between gap-1 pt-1.5 border-t border-slate-800 text-[11px]">
                               <div>
-                                <span className="text-[10px] text-slate-400 block font-medium">想定払戻レンジ</span>
-                                <span className="font-bold text-slate-100 text-xs">
+                                <span className="text-slate-400 mr-1">想定払戻:</span>
+                                <span className="font-bold text-slate-100">
                                   {minPayout ? `${minPayout.toLocaleString()}円` : '-'}
-                                  <span className="text-slate-400 mx-1">〜</span>
-                                  {maxPayout ? `${maxPayout.toLocaleString()}円` : '-'}
+                                  {minPayout !== maxPayout && (
+                                    <>
+                                      <span className="text-slate-400 mx-1">〜</span>
+                                      {maxPayout ? `${maxPayout.toLocaleString()}円` : '-'}
+                                    </>
+                                  )}
                                 </span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-400 block font-medium">想定回収率</span>
-                                <span className="font-bold text-slate-100 text-xs">
-                                  {minPayout && totalBetsAmount > 0 ? `${((minPayout / totalBetsAmount) * 100).toFixed(0)}%` : '-'}
-                                  <span className="text-slate-400 mx-1">〜</span>
-                                  {maxPayout && totalBetsAmount > 0 ? `${((maxPayout / totalBetsAmount) * 100).toFixed(0)}%` : '-'}
-                                </span>
-                              </div>
-                            </div>
-                            {totalBetsAmount > 0 && allCombs.length > 0 && (
-                              <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                                {trigamiCount > 0 ? (
-                                  <span className="text-amber-400 font-bold flex items-center gap-1">
-                                    <span>⚠️</span> 全{allCombs.length}点中 {trigamiCount}点がトリガミ（赤字）
-                                  </span>
-                                ) : (
-                                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                    <span>✨</span> 的中すれば全買い目でプラス収支！
+                                {minPayout && totalBetsAmount > 0 && (
+                                  <span className="text-slate-400 ml-1 text-[10px]">
+                                    ({((minPayout / totalBetsAmount) * 100).toFixed(0)}%
+                                    {minPayout !== maxPayout && maxPayout ? `〜${((maxPayout / totalBetsAmount) * 100).toFixed(0)}%` : ''})
                                   </span>
                                 )}
                               </div>
-                            )}
+                              {totalBetsAmount > 0 && allCombs.length > 0 && (
+                                <div>
+                                  {trigamiCount > 0 ? (
+                                    <span className="text-amber-400 font-bold text-[10px]">
+                                      ⚠️ {allCombs.length}点中 {trigamiCount}点トリガミ
+                                    </span>
+                                  ) : (
+                                    <span className="text-emerald-400 font-bold text-[10px]">
+                                      ✨ 全点プラス収支
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ) : (
-                          <div className="bg-blue-50/60 border border-blue-100 p-2.5 rounded-xl flex items-center gap-2 text-[11px] text-blue-700 font-medium">
-                            <span className="text-sm">💡</span>
-                            <span>「予想印」タブで各馬の単勝オッズを入力すると、全買い目の予想オッズ・想定払戻金が自動計算されます</span>
+                          <div className="bg-blue-50/70 border border-blue-100 px-3 py-2 rounded-xl flex items-center gap-1.5 text-[11px] text-blue-700 font-medium">
+                            <span>💡</span>
+                            <span>「予想印」タブで各馬の単勝オッズを入れると予想オッズを自動推計します</span>
                           </div>
                         )
                       )}
@@ -2560,14 +2508,14 @@
                             
                             // 1点買い目のオッズ・払戻金計算
                             const singleComb = combList.length === 1 ? combList[0] : null;
-                            const singleEstOdds = singleComb ? estimateCombinationOdds(bet.type, singleComb.text, winProbs) : null;
+                            const singleEstOdds = singleComb ? estimateCombinationOdds(bet.type, singleComb.text, oddsMap) : null;
                             const singlePayout = singleEstOdds ? Math.round((bet.amountPerBet || 0) * singleEstOdds) : null;
                             const singleIsTrigami = (singlePayout !== null && totalBetsAmount > 0) ? (singlePayout < totalBetsAmount) : false;
 
                             return (
                               <div 
                                 key={bet.id} 
-                                className={`p-3 rounded-xl border shadow-sm flex flex-col gap-2 transition-all ${
+                                className={`p-3 rounded-xl border shadow-sm flex flex-col gap-1.5 transition-all ${
                                   editingBetId === bet.id
                                     ? 'bg-amber-50/40 border-amber-300 ring-2 ring-amber-200'
                                     : isBetHit 
@@ -2575,97 +2523,95 @@
                                       : 'bg-white border-gray-100'
                                 }`}
                               >
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                                      {isBetHit && (
-                                        <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5 animate-fade-in">
-                                          <span>🎯</span> 的中
-                                        </span>
-                                      )}
-                                      {editingBetId === bet.id && (
-                                        <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-amber-200 animate-fade-in">
-                                          編集中
-                                        </span>
-                                      )}
-                                      <span className="bg-green-50 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-green-100">
-                                        {bet.type}
+                                {/* 上段: タグ情報 + 金額 + 操作ボタン */}
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                    {isBetHit && (
+                                      <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded shadow-sm">
+                                        🎯 的中
                                       </span>
-                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${bet.multi ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-100 text-gray-600'}`}>
-                                        {bet.method === 'normal' ? '通常' : bet.method === 'box' ? 'ボックス' : bet.method === 'formation' ? 'フォーメーション' : bet.multi ? 'マルチ' : '流し'}
-                                      </span>
-                                      <span className="text-[11px] text-gray-400 font-medium">
-                                        {bet.combinationCount}点 × 各{bet.amountPerBet}円
-                                      </span>
-                                    </div>
-                                    <div className="text-sm font-bold text-gray-800">
-                                      {renderBetHorses(bet, activeRace.result)}
-                                    </div>
-                                    {/* 1点買い目の予想オッズ・払戻金表示 */}
-                                    {singleEstOdds && (
-                                      <div className="mt-1 flex items-center gap-2 text-[11px]">
-                                        <span className="font-bold text-gray-600">
-                                          推計 <span className="font-extrabold text-gray-900">{singleEstOdds}</span>倍
-                                        </span>
-                                        <span className="text-gray-300">|</span>
-                                        <span className="font-bold text-gray-600">
-                                          想定払戻: <span className="font-extrabold text-emerald-700">{singlePayout.toLocaleString()}円</span>
-                                        </span>
-                                        {singleIsTrigami ? (
-                                          <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded font-extrabold">
-                                            ⚠️ トリガミ (-{(totalBetsAmount - singlePayout).toLocaleString()}円)
-                                          </span>
-                                        ) : totalBetsAmount > 0 && (
-                                          <span className="text-[9px] text-emerald-600 font-extrabold">
-                                            (+{(singlePayout - totalBetsAmount).toLocaleString()}円 / {((singlePayout / totalBetsAmount) * 100).toFixed(0)}%)
-                                          </span>
-                                        )}
-                                      </div>
                                     )}
+                                    {editingBetId === bet.id && (
+                                      <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.2 rounded border border-amber-200">
+                                        編集中
+                                      </span>
+                                    )}
+                                    <span className="bg-green-50 text-green-700 text-[10px] font-bold px-1.5 py-0.2 rounded border border-green-100">
+                                      {bet.type}
+                                    </span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${bet.multi ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-gray-100 text-gray-600'}`}>
+                                      {bet.method === 'normal' ? '通常' : bet.method === 'box' ? 'ボックス' : bet.method === 'formation' ? 'フォーメーション' : bet.multi ? 'マルチ' : '流し'}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 font-medium">
+                                      {bet.combinationCount}点×{bet.amountPerBet}円
+                                    </span>
                                   </div>
-                                  <div className="text-right flex-shrink-0 flex items-center gap-1.5">
-                                    <span className="text-sm font-extrabold text-gray-800 mr-1">
+                                  <div className="text-right flex-shrink-0 flex items-center gap-1">
+                                    <span className="text-xs font-extrabold text-gray-800 mr-0.5">
                                       {(bet.totalAmount || 0).toLocaleString()}円
                                     </span>
                                     <button 
                                       type="button"
                                       onClick={() => handleStartEditBet(bet)} 
                                       title="買い目を編集"
-                                      className={`p-1.5 rounded-full transition-colors ${
+                                      className={`p-1 rounded-full transition-colors ${
                                         editingBetId === bet.id 
                                           ? 'text-amber-600 bg-amber-100' 
                                           : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
                                       }`}
                                     >
-                                      <Edit2 size={16} />
+                                      <Edit2 size={15} />
                                     </button>
                                     <button 
                                       type="button"
                                       onClick={() => handleDeleteBet(activeRace.id, bet.id)} 
                                       title="買い目を削除"
-                                      className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors"
+                                      className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-full transition-colors"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 size={15} />
                                     </button>
                                   </div>
                                 </div>
 
-                                {/* 分解組み合わせリスト */}
+                                {/* 中段: 馬番号・組み合わせテキスト */}
+                                <div className="text-sm font-bold text-gray-800">
+                                  {renderBetHorses(bet, activeRace.result)}
+                                </div>
+
+                                {/* 1点買い目のオッズ・想定払戻表示 */}
+                                {singleEstOdds && (
+                                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 pt-0.5">
+                                    <span>推計 <span className="text-gray-800 font-extrabold">{singleEstOdds}</span>倍</span>
+                                    <span className="text-gray-300">→</span>
+                                    <span className="text-emerald-700 font-extrabold">{singlePayout.toLocaleString()}円</span>
+                                    {singleIsTrigami ? (
+                                      <span className="text-[9px] bg-amber-100 text-amber-800 border border-amber-300 px-1 rounded font-extrabold">
+                                        ⚠️ ガミ
+                                      </span>
+                                    ) : totalBetsAmount > 0 && (
+                                      <span className="text-[10px] text-emerald-600 font-extrabold">
+                                        (+{((singlePayout / totalBetsAmount) * 100).toFixed(0)}%)
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* 分解組み合わせリスト（複数点の場合） */}
                                 {combList.length > 1 && (
-                                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 text-[10px] font-bold">
+                                  <div className="flex flex-wrap gap-1 pt-1.5 border-t border-gray-100 text-[10px] font-bold">
                                     {combList.map((c, idx) => {
-                                      const estOdds = estimateCombinationOdds(bet.type, c.text, winProbs);
+                                      const estOdds = estimateCombinationOdds(bet.type, c.text, oddsMap);
                                       const payout = estOdds ? Math.round((bet.amountPerBet || 0) * estOdds) : null;
                                       const isTrigami = (payout !== null && totalBetsAmount > 0) ? (payout < totalBetsAmount) : false;
 
                                       return (
                                         <span 
                                           key={idx} 
-                                          className={`px-2 py-0.5 rounded border transition-colors flex items-center gap-1 ${
+                                          className={`px-1.5 py-0.5 rounded border transition-colors flex items-center gap-1 ${
                                             c.isHit 
-                                              ? 'bg-red-500 text-white border-red-500 shadow-sm animate-pulse' 
+                                              ? 'bg-red-500 text-white border-red-500 shadow-sm' 
                                               : isTrigami
-                                                ? 'bg-amber-50/70 text-amber-900 border-amber-200'
+                                                ? 'bg-amber-50/80 text-amber-900 border-amber-200'
                                                 : 'bg-gray-50 text-gray-700 border-gray-200'
                                           }`}
                                         >
@@ -2682,7 +2628,7 @@
                                             </span>
                                           )}
                                           {isTrigami && !c.isHit && (
-                                            <span className="text-[8px] bg-amber-200/80 text-amber-900 px-1 py-0.2 rounded font-black">ガミ</span>
+                                            <span className="text-[8px] bg-amber-200 text-amber-900 px-0.5 rounded font-black">ガミ</span>
                                           )}
                                         </span>
                                       );
@@ -2692,7 +2638,7 @@
                               </div>
                             );
                           })}
-                          <div className="bg-gray-100/60 p-3 rounded-xl flex justify-between items-center font-bold text-xs">
+                          <div className="bg-gray-100/60 p-2.5 rounded-xl flex justify-between items-center font-bold text-xs">
                             <span className="text-gray-500">買い目合計:</span>
                             <span className="text-sm text-gray-800">{totalBetsAmount.toLocaleString()}円</span>
                           </div>
