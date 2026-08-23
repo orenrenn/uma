@@ -339,8 +339,8 @@
     // ── モンテカルロ・シミュレーションによる買い目オッズ推計 ────────────────────
 
     // 1. 累積正規分布の逆関数（近似）
-    
-const ensureRaceSchema = (raceList) => {
+
+    const ensureRaceSchema = (raceList) => {
       if (!Array.isArray(raceList)) return [];
       return raceList.map(r => {
         if (!r || typeof r !== 'object') return r;
@@ -1046,6 +1046,15 @@ const ensureRaceSchema = (raceList) => {
         const netBalance = totalPayout - totalInvestment;
         const recoveryRate = totalInvestment > 0 ? ((totalPayout / totalInvestment) * 100).toFixed(1) : '0.0';
 
+        const participatedRaces = sortedForBalance.filter(r => (r.investment || 0) > 0);
+        const hitRaces = participatedRaces.filter(r => {
+          return (Array.isArray(r.bets) && r.bets.some(b => expandBet(b, r.result).some(c => c.isHit))) || (r.payout > 0);
+        });
+        const hitRate = participatedRaces.length > 0 ? ((hitRaces.length / participatedRaces.length) * 100).toFixed(1) : '0.0';
+
+        const totalHitPayout = hitRaces.reduce((sum, r) => sum + (r.payout || 0), 0);
+        const avgHitPayout = hitRaces.length > 0 ? Math.round(totalHitPayout / hitRaces.length) : 0;
+
         const safeRaces = Array.isArray(races) ? [...races] : [];
         safeRaces.sort((a, b) => {
           if (raceSortOption === 'date-desc') {
@@ -1084,8 +1093,11 @@ const ensureRaceSchema = (raceList) => {
                   <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full bg-white shadow-sm border border-gray-100"><SettingsIcon size={18} /></button>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">📈 収支管理</h2>
+                  <span className="text-xs text-gray-400 font-bold bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
+                    参加レース数: {participatedRaces.length}
+                  </span>
                 </div>
 
                 {/* サマリーカード */}
@@ -1107,6 +1119,14 @@ const ensureRaceSchema = (raceList) => {
                   <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                     <p className="text-xs text-gray-400 font-bold mb-1">回収率</p>
                     <p className={`text-lg font-bold ${parseFloat(recoveryRate) >= 100 ? 'text-blue-600' : 'text-gray-800'}`}>{recoveryRate}%</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <p className="text-xs text-gray-400 font-bold mb-1">的中率</p>
+                    <p className="text-lg font-bold text-gray-800">{hitRate}%</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <p className="text-xs text-gray-400 font-bold mb-1">平均払戻金額</p>
+                    <p className="text-lg font-bold text-gray-800">{avgHitPayout.toLocaleString()}円</p>
                   </div>
                 </div>
 
@@ -2449,7 +2469,7 @@ const ensureRaceSchema = (raceList) => {
                   {/* 2. 登録済み買い目リスト */}
                   {(() => {
 
-                    
+
                     let allCombs = [];
                     currentBets.forEach(bet => {
                       const combList = expandBet(bet, activeRace.result);
@@ -2474,7 +2494,7 @@ const ensureRaceSchema = (raceList) => {
                               </span>
                             )}
                           </h3>
-                          
+
                         </div>
 
                         {currentBets.length === 0 ? (
@@ -2487,7 +2507,7 @@ const ensureRaceSchema = (raceList) => {
                               const combList = expandBet(bet, activeRace.result);
                               const isBetHit = combList.some(c => c.isHit);
 
-                              
+
 
                               return (
                                 <div
@@ -2559,15 +2579,15 @@ const ensureRaceSchema = (raceList) => {
                                   {combList.length > 1 && (
                                     <div className="flex flex-wrap gap-1 pt-1.5 border-t border-gray-100 text-[10px] font-bold">
                                       {combList.map((c, idx) => (
-                                          <span
-                                            key={idx}
-                                            className={`px-1.5 py-0.5 rounded border transition-colors flex items-center gap-1 ${c.isHit
-                                              ? 'bg-red-500 text-white border-red-500 shadow-sm'
-                                              : 'bg-gray-50 text-gray-700 border-gray-200'
-                                              }`}
-                                          >
-                                            <span>{c.isHit ? '🎯 ' : ''}{c.text}</span>
-                                          </span>
+                                        <span
+                                          key={idx}
+                                          className={`px-1.5 py-0.5 rounded border transition-colors flex items-center gap-1 ${c.isHit
+                                            ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                                            : 'bg-gray-50 text-gray-700 border-gray-200'
+                                            }`}
+                                        >
+                                          <span>{c.isHit ? '🎯 ' : ''}{c.text}</span>
+                                        </span>
                                       ))}
                                     </div>
                                   )}
