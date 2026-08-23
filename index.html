@@ -1237,7 +1237,7 @@ const ensureRaceSchema = (raceList) => {
                       const markedCount = horses.filter(h => h.mark !== '-' && h.mark !== '消').length;
                       const keshiCount = horses.filter(h => h.mark === '消').length;
                       const balance = (race.payout || 0) - (race.investment || 0);
-                      const hasHit = Array.isArray(race.bets) && race.bets.some(bet => expandBet(bet, race.result).some(c => c.isHit));
+                      const hasHit = (Array.isArray(race.bets) && race.bets.some(bet => expandBet(bet, race.result).some(c => c.isHit))) || (race.payout > 0);
                       return (
                         <div key={race.id} onClick={() => setActiveRaceId(race.id)} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md cursor-pointer transition-shadow">
                           <div className="flex justify-between items-start mb-2">
