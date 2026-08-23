@@ -1237,10 +1237,17 @@ const ensureRaceSchema = (raceList) => {
                       const markedCount = horses.filter(h => h.mark !== '-' && h.mark !== '消').length;
                       const keshiCount = horses.filter(h => h.mark === '消').length;
                       const balance = (race.payout || 0) - (race.investment || 0);
+                      const hasHit = Array.isArray(race.bets) && race.bets.some(bet => expandBet(bet, race.result).some(c => c.isHit));
                       return (
                         <div key={race.id} onClick={() => setActiveRaceId(race.id)} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md cursor-pointer transition-shadow">
                           <div className="flex justify-between items-start mb-2">
-                            <div><p className="text-xs font-bold text-green-600 tracking-wider mb-1 bg-green-50 inline-block px-2 py-0.5 rounded">{race.date}</p><h3 className="text-lg font-bold text-gray-900">{race.name}</h3></div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-xs font-bold text-green-600 tracking-wider bg-green-50 inline-block px-2 py-0.5 rounded">{race.date}</p>
+                                {hasHit && <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">🎯 的中</span>}
+                              </div>
+                              <h3 className="text-lg font-bold text-gray-900">{race.name}</h3>
+                            </div>
                             <button onClick={(e) => { e.stopPropagation(); handleDeleteRace(race.id); }} className="text-gray-300 hover:text-red-500 p-2 -mr-2 -mt-2 rounded-full"><Trash2 size={16} /></button>
                           </div>
                           <div className="flex justify-between items-center mt-3">
@@ -1250,11 +1257,16 @@ const ensureRaceSchema = (raceList) => {
                               {keshiCount > 0 && <span className="bg-gray-800 text-white px-2 py-1 rounded-md">消 {keshiCount}頭</span>}
                             </div>
                             {(race.investment > 0 || race.payout > 0) && (
-                              <div className="text-xs font-bold flex items-center gap-1.5">
-                                <span className="text-gray-400">収支:</span>
-                                <span className={balance > 0 ? 'text-blue-600' : balance < 0 ? 'text-red-500' : 'text-gray-600'}>
-                                  {balance > 0 ? '+' : ''}{balance.toLocaleString()}円
-                                </span>
+                              <div className="flex flex-col items-end justify-center min-w-[90px] flex-shrink-0">
+                                {(race.investment > 0) && (
+                                  <span className="text-[10px] text-gray-400 font-normal mb-0.5">回収率: {Math.round(((race.payout || 0) / race.investment) * 100)}%</span>
+                                )}
+                                <div className="text-xs font-bold whitespace-nowrap">
+                                  <span className="text-gray-400 mr-1">収支:</span>
+                                  <span className={balance > 0 ? 'text-blue-600' : balance < 0 ? 'text-red-500' : 'text-gray-600'}>
+                                    {balance > 0 ? '+' : ''}{balance.toLocaleString()}円
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -1316,10 +1328,12 @@ const ensureRaceSchema = (raceList) => {
         if (filter === 'marked_paddock') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark) || horse.paddockGood === true;
         if (filter === 'marked') return ['◎', '〇', '▲', '△', '☆'].includes(horse.mark);
         if (filter === 'keshi') return horse.mark === '消';
+        if (filter === 'not_keshi') return horse.mark !== '消';
         return true;
       });
       filteredAndSorted.sort((a, b) => {
         if (sortType === 'number') return (parseInt(a.number) || 999) - (parseInt(b.number) || 999);
+        if (sortType === 'odds') return (parseFloat(a.odds) || 999) - (parseFloat(b.odds) || 999);
         const markDiff = MARK_ORDER[a.mark] - MARK_ORDER[b.mark];
         if (markDiff !== 0) return markDiff;
         return (parseInt(a.number) || 999) - (parseInt(b.number) || 999);
@@ -1558,7 +1572,7 @@ const ensureRaceSchema = (raceList) => {
         );
       };
 
-      const expandBet = (bet, result) => {
+      function expandBet(bet, result) {
         const { type, method, horses } = bet;
         const [h1Raw, h2Raw, h3Raw] = normalizeHorses(horses);
 
@@ -1818,17 +1832,10 @@ const ensureRaceSchema = (raceList) => {
 
       const handleCopyBets = (race) => {
         const bets = Array.isArray(race.bets) ? race.bets : [];
-        const investment = race.investment || 0;
-        const payout = race.payout || 0;
-        const balance = payout - investment;
 
-        let text = `🎫 ${race.name} 買い目・収支\n`;
-        text += `購入金額: ${investment.toLocaleString()}円\n`;
-        text += `払戻金額: ${payout.toLocaleString()}円\n`;
-        text += `収支: ${balance >= 0 ? '+' : ''}${balance.toLocaleString()}円\n\n`;
+        let text = `🎫 ${race.name} 買い目\n\n`;
 
         if (bets.length > 0) {
-          text += `【買い目内訳】\n`;
           bets.forEach(b => {
             const methodLabel = b.method === 'normal' ? '通常' : b.method === 'box' ? 'ボックス' : 'フォーメーション';
             text += `・${b.type} ${methodLabel} (${b.combinationCount}点 × 各${b.amountPerBet}円) = ${(b.totalAmount || 0).toLocaleString()}円\n`;
@@ -1890,16 +1897,18 @@ const ensureRaceSchema = (raceList) => {
                     {importText.trim() && <button onClick={handleParseImport} className="mt-2 w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-sm animate-fade-in">解析して追加</button>}
                   </div>
 
-                  <div className="flex items-center justify-between gap-1 mb-4 bg-gray-50 p-1.5 rounded-xl border border-gray-100 text-[10px] min-[360px]:text-xs font-bold">
-                    <div className="flex gap-0.5 min-[360px]:gap-1">
-                      <button onClick={() => setFilter('all')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>全頭</button>
-                      <button onClick={() => setFilter('marked_paddock')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'marked_paddock' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印/パ</button>
-                      <button onClick={() => setFilter('marked')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'marked' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印</button>
-                      <button onClick={() => setFilter('keshi')} className={`px-2 py-1.5 rounded-lg transition-colors ${filter === 'keshi' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>消</button>
+                  <div className="flex items-center justify-between gap-0.5 mb-4 bg-gray-50 p-1 min-[360px]:p-1.5 rounded-xl border border-gray-100 text-[9px] min-[360px]:text-[10px] min-[400px]:text-xs font-bold">
+                    <div className="flex gap-0.5">
+                      <button onClick={() => setFilter('all')} className={`px-1.5 py-1 rounded-lg transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>全頭</button>
+                      <button onClick={() => setFilter('marked_paddock')} className={`px-1.5 py-1 rounded-lg transition-colors ${filter === 'marked_paddock' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印/パ</button>
+                      <button onClick={() => setFilter('marked')} className={`px-1.5 py-1 rounded-lg transition-colors ${filter === 'marked' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>印</button>
+                      <button onClick={() => setFilter('keshi')} className={`px-1.5 py-1 rounded-lg transition-colors ${filter === 'keshi' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>消</button>
+                      <button onClick={() => setFilter('not_keshi')} className={`px-1.5 py-1 rounded-lg transition-colors ${filter === 'not_keshi' ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500'}`}>消以外</button>
                     </div>
                     <div className="flex gap-0.5 bg-gray-200/50 p-0.5 rounded-lg">
                       <button onClick={() => setSortType('number')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'number' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>馬番</button>
                       <button onClick={() => setSortType('mark')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'mark' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>印順</button>
+                      <button onClick={() => setSortType('odds')} className={`px-1.5 py-1 rounded transition-colors ${sortType === 'odds' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>オッズ</button>
                     </div>
                   </div>
 
@@ -2457,7 +2466,14 @@ const ensureRaceSchema = (raceList) => {
                     return (
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <h3 className="font-bold text-gray-800 flex items-center gap-1.5">📋 登録済みの買い目</h3>
+                          <h3 className="font-bold text-gray-800 flex items-center gap-1.5">
+                            📋 登録済みの買い目
+                            {currentBets.length > 0 && (
+                              <span className="text-sm font-normal text-gray-500 ml-2">
+                                (合計: {currentBets.reduce((sum, b) => sum + (b.totalAmount || 0), 0).toLocaleString()}円)
+                              </span>
+                            )}
+                          </h3>
                           
                         </div>
 
@@ -2639,9 +2655,7 @@ const ensureRaceSchema = (raceList) => {
                           min="0"
                           step="100"
                         />
-                        {totalBetsAmount > 0 && (
-                          <p className="text-[10px] text-gray-400 mt-1">※買い目合計: {totalBetsAmount.toLocaleString()}円</p>
-                        )}
+
                       </div>
                       <div>
                         <label className="text-xs text-gray-400 font-bold block mb-1">払戻金額 (円)</label>
@@ -2660,9 +2674,16 @@ const ensureRaceSchema = (raceList) => {
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-200/60 flex justify-between items-center text-xs font-bold">
                       <span className="text-gray-500">このレースの収支:</span>
-                      <span className={`text-base font-extrabold ${((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? 'text-blue-600' : ((activeRace.payout || 0) - (activeRace.investment || 0)) < 0 ? 'text-red-500' : 'text-gray-600'}`}>
-                        {((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? '+' : ''}{((activeRace.payout || 0) - (activeRace.investment || 0)).toLocaleString()}円
-                      </span>
+                      <div className="flex items-center gap-3">
+                        {(activeRace.investment > 0) && (
+                          <span className="text-gray-500 font-normal">
+                            回収率: {Math.round(((activeRace.payout || 0) / activeRace.investment) * 100)}%
+                          </span>
+                        )}
+                        <span className={`text-base font-extrabold ${((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? 'text-blue-600' : ((activeRace.payout || 0) - (activeRace.investment || 0)) < 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                          {((activeRace.payout || 0) - (activeRace.investment || 0)) > 0 ? '+' : ''}{((activeRace.payout || 0) - (activeRace.investment || 0)).toLocaleString()}円
+                        </span>
+                      </div>
                     </div>
                   </div>
 
