@@ -1076,6 +1076,16 @@
             const balB = (b.payout || 0) - (b.investment || 0);
             return balA - balB;
           }
+          if (raceSortOption === 'recovery-desc') {
+            const recA = a.investment > 0 ? (a.payout || 0) / a.investment : 0;
+            const recB = b.investment > 0 ? (b.payout || 0) / b.investment : 0;
+            return recB - recA;
+          }
+          if (raceSortOption === 'recovery-asc') {
+            const recA = a.investment > 0 ? (a.payout || 0) / a.investment : 0;
+            const recB = b.investment > 0 ? (b.payout || 0) / b.investment : 0;
+            return recA - recB;
+          }
           return 0;
         });
 
@@ -1225,8 +1235,10 @@
                         <option value="date-desc">📅 新しい順</option>
                         <option value="date-asc">📅 古い順</option>
                         <option value="name-asc">🔤 五十音順</option>
-                        <option value="balance-desc">💰 高い順</option>
-                        <option value="balance-asc">💰 低い順</option>
+                        <option value="balance-desc">💰 収支高い順</option>
+                        <option value="balance-asc">💰 収支低い順</option>
+                        <option value="recovery-desc">📈 回収率高い順</option>
+                        <option value="recovery-asc">📈 回収率低い順</option>
                       </select>
                       <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
