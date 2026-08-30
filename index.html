@@ -2138,7 +2138,7 @@
 
         if (bets.length > 0) {
           bets.forEach(b => {
-            const methodLabel = b.method === 'normal' ? '通常' : b.method === 'box' ? 'ボックス' : 'フォーメーション';
+            const methodLabel = b.method === 'normal' ? '通常' : b.method === 'box' ? 'ボックス' : b.method === 'formation' ? 'フォーメーション' : b.multi ? 'マルチ' : '流し';
             text += `・${b.type} ${methodLabel} (${b.combinationCount}点 × 各${b.amountPerBet}円) = ${(b.totalAmount || 0).toLocaleString()}円\n`;
             text += `  ${formatBetHorses(b)}\n`;
           });
