@@ -742,9 +742,9 @@
           if (typeof val === 'object') return String(val.number || val.name || '');
           return String(val);
         };
-        const sel1 = h1Raw.map(toStr).filter(Boolean);
-        const sel2 = h2Raw.map(toStr).filter(Boolean);
-        const sel3 = h3Raw.map(toStr).filter(Boolean);
+        const sel1 = h1Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const sel2 = h2Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const sel3 = h3Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
         setBetSel1(sel1);
         setBetSel2(sel2);
@@ -1435,7 +1435,10 @@
           const multiSuffix = bet.multi ? ' (マルチ)' : '';
           if (type === '3連複' || type === '3連単') {
             if (bet.anchorCount === 2) {
-              return `軸: ${h1[0] || '-'}, ${h2[0] || '-'} ➔ 相手: ${h3.join(', ')}${multiSuffix}`;
+              const a1 = h1[0] || '-';
+              const a2 = h2[0] || '-';
+              const anchors = type === '3連複' ? [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2];
+              return `軸: ${anchors[0]}, ${anchors[1]} ➔ 相手: ${h3.join(', ')}${multiSuffix}`;
             }
             return `軸: ${h1[0] || '-'} ➔ 相手: ${h2.join(', ')}${multiSuffix}`;
           }
@@ -1450,13 +1453,22 @@
           if (method === 'formation') {
             return `${h1.join(',')} → ${h2.join(',')} → ${h3.join(',')}`;
           }
-          return `${h1[0] || '-'} → ${h2[0] || '-'} → ${h3[0] || '-'}`;
+          const a1 = h1[0] || '-';
+          const a2 = h2[0] || '-';
+          const a3 = h3[0] || '-';
+          const finalHorses = type === '3連複' ? [a1, a2, a3].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2, a3];
+          return `${finalHorses[0]} → ${finalHorses[1]} → ${finalHorses[2]}`;
         }
 
         if (method === 'formation') {
           return `${h1.join(',')} - ${h2.join(',')}`;
         }
-        return `${h1[0] || '-'} - ${h2[0] || '-'}`;
+        
+        const isUnordered = type === '馬連' || type === 'ワイド' || type === '枠連';
+        const a1 = h1[0] || '-';
+        const a2 = h2[0] || '-';
+        const finalHorses = isUnordered ? [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2];
+        return `${finalHorses[0]} - ${finalHorses[1]}`;
       };
 
       const renderBetHorses = (bet, result) => {
@@ -1515,12 +1527,15 @@
           const multiBadge = isMulti ? <span className="text-[10px] text-red-600 bg-red-50 border border-red-100 rounded px-1 font-bold ml-1">マルチ</span> : null;
           if (type === '3連複' || type === '3連単') {
             if (bet.anchorCount === 2) {
+              const a1 = h1[0] || '-';
+              const a2 = h2[0] || '-';
+              const anchors = type === '3連複' ? [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2];
               return (
                 <div className="flex flex-wrap items-center gap-1">
                   <span className="text-xs text-gray-400 font-normal mr-0.5">軸:</span>
-                  {formatHorseNum(h1[0])}
+                  {formatHorseNum(anchors[0])}
                   <span className="text-gray-300 font-normal mx-0.5">,</span>
-                  {formatHorseNum(h2[0])}
+                  {formatHorseNum(anchors[1])}
                   <span className="text-gray-300 font-normal mx-0.5">➔</span>
                   <span className="text-xs text-gray-400 font-normal mr-0.5">相手:</span>
                   {renderGroup(h3)}
@@ -1576,13 +1591,17 @@
               </div>
             );
           }
+          const a1 = h1[0] || '-';
+          const a2 = h2[0] || '-';
+          const a3 = h3[0] || '-';
+          const finalHorses = type === '3連複' ? [a1, a2, a3].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2, a3];
           return (
             <div className="flex flex-wrap items-center gap-1">
-              {formatHorseNum(h1[0])}
+              {formatHorseNum(finalHorses[0])}
               <span className="text-gray-300 font-normal mx-0.5">→</span>
-              {formatHorseNum(h2[0])}
+              {formatHorseNum(finalHorses[1])}
               <span className="text-gray-300 font-normal mx-0.5">→</span>
-              {formatHorseNum(h3[0])}
+              {formatHorseNum(finalHorses[2])}
             </div>
           );
         }
@@ -1596,11 +1615,16 @@
             </div>
           );
         }
+        
+        const isUnordered = type === '馬連' || type === 'ワイド' || type === '枠連';
+        const a1 = h1[0] || '-';
+        const a2 = h2[0] || '-';
+        const finalHorses = isUnordered ? [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2];
         return (
           <div className="flex flex-wrap items-center gap-1">
-            {formatHorseNum(h1[0])}
+            {formatHorseNum(finalHorses[0])}
             <span className="text-gray-300 font-normal mx-0.5">-</span>
-            {formatHorseNum(h2[0])}
+            {formatHorseNum(finalHorses[1])}
           </div>
         );
       };
@@ -1840,9 +1864,9 @@
           if (typeof val === 'object') return val.number || val.name || '';
           return String(val);
         };
-        const h1 = h1Raw.map(toStr).filter(Boolean);
-        const h2 = h2Raw.map(toStr).filter(Boolean);
-        const h3 = h3Raw.map(toStr).filter(Boolean);
+        const h1 = h1Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const h2 = h2Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const h3 = h3Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
         const combinations = [];
 
@@ -2092,6 +2116,18 @@
           }
         }
 
+        combinations.sort((a, b) => {
+          const parseNums = (str) => {
+            const matches = str.match(/\d+/g);
+            return matches ? matches.map(Number) : [];
+          };
+          const numsA = parseNums(a.text);
+          const numsB = parseNums(b.text);
+          for (let i = 0; i < Math.min(numsA.length, numsB.length); i++) {
+            if (numsA[i] !== numsB[i]) return numsA[i] - numsB[i];
+          }
+          return numsA.length - numsB.length;
+        });
         return combinations;
       };
 
