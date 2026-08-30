@@ -1423,9 +1423,9 @@
           if (typeof val === 'object') return val.number || val.name || '';
           return String(val);
         };
-        const h1 = h1Raw.map(toStr).filter(Boolean);
-        const h2 = h2Raw.map(toStr).filter(Boolean);
-        const h3 = h3Raw.map(toStr).filter(Boolean);
+        const h1 = h1Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const h2 = h2Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const h3 = h3Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
         if (method === 'box') {
           return `${h1.join(', ')} (ボックス)`;
@@ -1468,9 +1468,9 @@
           if (typeof val === 'object') return val.number || val.name || '';
           return String(val);
         };
-        const h1 = h1Raw.map(toStr).filter(Boolean);
-        const h2 = h2Raw.map(toStr).filter(Boolean);
-        const h3 = h3Raw.map(toStr).filter(Boolean);
+        const h1 = h1Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const h2 = h2Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        const h3 = h3Raw.map(toStr).filter(Boolean).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
         const formatHorseNum = (val) => {
           const num = toStr(val);
