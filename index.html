@@ -1437,7 +1437,7 @@
             if (bet.anchorCount === 2) {
               const a1 = h1[0] || '-';
               const a2 = h2[0] || '-';
-              const anchors = type === '3連複' ? [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2];
+              const anchors = [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
               return `軸: ${anchors[0]}, ${anchors[1]} ➔ 相手: ${h3.join(', ')}${multiSuffix}`;
             }
             return `軸: ${h1[0] || '-'} ➔ 相手: ${h2.join(', ')}${multiSuffix}`;
@@ -1529,7 +1529,7 @@
             if (bet.anchorCount === 2) {
               const a1 = h1[0] || '-';
               const a2 = h2[0] || '-';
-              const anchors = type === '3連複' ? [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) : [a1, a2];
+              const anchors = [a1, a2].sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
               return (
                 <div className="flex flex-wrap items-center gap-1">
                   <span className="text-xs text-gray-400 font-normal mr-0.5">軸:</span>
