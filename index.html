@@ -1690,7 +1690,7 @@
           if (a.isSingle && b.isSingle) return b.borderOdds - a.borderOdds;
           if (a.isSingle) return -1;
           if (b.isSingle) return 1;
-          return a.key.localeCompare(b.key);
+          return b.borderOdds - a.borderOdds;
         });
 
         return (
