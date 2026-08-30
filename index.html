@@ -1863,13 +1863,22 @@
             combinations.push({ text: `${num}`, isHit });
           });
         } else if (type === '馬連' || type === 'ワイド' || type === '枠連') {
+          const checkHit = (a, b) => {
+            if (!first || !second) return false;
+            if (type === 'ワイド') {
+              if (!third) return false;
+              const t = sortNums(a, b);
+              return t === sortNums(first, second) || t === sortNums(first, third) || t === sortNums(second, third);
+            }
+            return sortNums(a, b) === sortNums(first, second);
+          };
+
           if (method === 'box') {
             for (let i = 0; i < h1.length; i++) {
               for (let j = i + 1; j < h1.length; j++) {
                 const a = h1[i];
                 const b = h1[j];
-                const isHit = first && second && sortNums(a, b) === sortNums(first, second);
-                combinations.push({ text: sortNums(a, b), isHit });
+                combinations.push({ text: sortNums(a, b), isHit: checkHit(a, b) });
               }
             }
           } else if (method === 'formation') {
@@ -1880,8 +1889,7 @@
                 const key = sortNums(a, b);
                 if (seen.has(key)) return;
                 seen.add(key);
-                const isHit = first && second && key === sortNums(first, second);
-                combinations.push({ text: sortNums(a, b), isHit });
+                combinations.push({ text: sortNums(a, b), isHit: checkHit(a, b) });
               });
             });
           } else if (method === 'nagashi') {
@@ -1889,16 +1897,14 @@
             if (anchor) {
               h2.forEach(b => {
                 if (anchor === b) return;
-                const isHit = first && second && sortNums(anchor, b) === sortNums(first, second);
-                combinations.push({ text: sortNums(anchor, b), isHit });
+                combinations.push({ text: sortNums(anchor, b), isHit: checkHit(anchor, b) });
               });
             }
           } else {
             const a = h1[0];
             const b = h2[0];
             if (a && b) {
-              const isHit = first && second && sortNums(a, b) === sortNums(first, second);
-              combinations.push({ text: sortNums(a, b), isHit });
+              combinations.push({ text: sortNums(a, b), isHit: checkHit(a, b) });
             }
           }
         } else if (type === '馬単') {
