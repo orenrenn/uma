@@ -1614,7 +1614,7 @@
             const horse = (Array.isArray(activeRace.horses) ? activeRace.horses : []).find(h => String(h.number).trim() === String(text).trim());
             if (horse && horse.odds) return horse.odds;
           }
-          return '';
+          return null;
         };
 
         const uniqueCombs = [];
@@ -1638,7 +1638,6 @@
         const allScenarios = [];
         const horses = Array.from({length: 18}, (_, i) => String(i + 1));
         const totalInvestment = activeRace.investment || 0;
-
         const groupMap = {};
 
         for (let i = 0; i < horses.length; i++) {
@@ -1647,9 +1646,7 @@
             for (let k = 0; k < horses.length; k++) {
               if (i === k || j === k) continue;
               const result = { first: horses[i], second: horses[j], third: horses[k] };
-              let totalPayout = 0;
               let isHit = false;
-              let hasMissingOdds = false;
               const hitCombs = [];
               const seenHitKeys = new Set();
 
@@ -1661,29 +1658,26 @@
                     const key = `${bet.type}_${c.text}`;
                     if (!seenHitKeys.has(key)) {
                       seenHitKeys.add(key);
-                      const oddsVal = activeRace.torigamiOddsMap?.[key] !== undefined ? activeRace.torigamiOddsMap[key] : getDefaultOdds(bet.type, c.text);
-                      const odds = parseFloat(oddsVal);
-                      if (!odds || isNaN(odds)) {
-                        hasMissingOdds = true;
-                      } else {
-                        const uComb = uniqueCombs.find(u => u.key === key);
-                        const payout = odds * (uComb ? uComb.amount : bet.amountPerBet);
-                        totalPayout += payout;
-                        hitCombs.push({ type: bet.type, text: c.text, key, payout, odds, amount: uComb ? uComb.amount : bet.amountPerBet });
-                      }
+                      const uComb = uniqueCombs.find(u => u.key === key);
+                      hitCombs.push({ type: bet.type, text: c.text, key, amount: uComb ? uComb.amount : bet.amountPerBet });
                     }
                   }
                 });
               });
 
-              if (isHit && !hasMissingOdds) {
+              if (isHit) {
                 hitCombs.sort((a, b) => a.key.localeCompare(b.key));
                 const groupKey = hitCombs.map(c => c.key).join('|');
                 if (!groupMap[groupKey]) {
+                  const totalHitAmount = hitCombs.reduce((acc, c) => acc + c.amount, 0);
+                  const borderOdds = totalInvestment / totalHitAmount;
+                  
                   groupMap[groupKey] = {
                     hitCombs,
-                    totalPayout,
-                    profit: totalPayout - totalInvestment
+                    isSingle: hitCombs.length === 1,
+                    borderOdds,
+                    totalHitAmount,
+                    key: groupKey
                   };
                   allScenarios.push(groupMap[groupKey]);
                 }
@@ -1693,25 +1687,21 @@
         }
 
         allScenarios.sort((a, b) => {
-          const keyA = a.hitCombs.map(c => c.key).join('|');
-          const keyB = b.hitCombs.map(c => c.key).join('|');
-          const comp = keyA.localeCompare(keyB);
-          if (comp !== 0) return comp;
-          return a.profit - b.profit;
+          if (a.isSingle && b.isSingle) return b.borderOdds - a.borderOdds;
+          if (a.isSingle) return -1;
+          if (b.isSingle) return 1;
+          return a.key.localeCompare(b.key);
         });
-
-        const torigamiScenarios = allScenarios.filter(s => s.profit < 0);
-        const profitableScenarios = allScenarios.filter(s => s.profit >= 0);
 
         return (
           <div className="fixed inset-0 bg-black/60 z-50 flex flex-col animate-simple-fade-in">
             <div className="flex-1 overflow-y-auto w-full max-w-md mx-auto bg-gray-50 flex flex-col shadow-2xl">
-              <div className="bg-indigo-600 text-white p-4 sticky top-0 z-10 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-2">
-                  <TrendingUp size={20} />
-                  <h2 className="font-bold text-lg">トリガミチェッカー</h2>
+              <div className="bg-white p-4 sticky top-0 z-10 flex items-center justify-between shadow-sm border-b border-gray-100">
+                <div className="flex items-center gap-2 text-green-800">
+                  <TrendingUp size={20} className="text-green-600" />
+                  <h2 className="font-bold text-lg tracking-tight">トリガミチェッカー</h2>
                 </div>
-                <button onClick={() => setIsTorigamiModalOpen(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                <button onClick={() => setIsTorigamiModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
                   <Plus size={24} className="rotate-45" />
                 </button>
               </div>
@@ -1720,182 +1710,120 @@
                 <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                   <p className="text-gray-500 text-xs font-bold mb-1">現在のレース合計購入額</p>
                   <p className="text-xl font-extrabold text-gray-800">{totalInvestment.toLocaleString()}円</p>
-                  <p className="text-[10px] text-gray-400 mt-2">各買い目のオッズを入力すると、全着順パターンをシミュレーションしてトリガミ（的中してもマイナスになる）シナリオを抽出します。</p>
+                  <p className="text-[10px] text-gray-400 mt-2">各的中パターンにおいて、購入金額に対して「トリガミ」になるボーダーライン（必要な最低オッズや払戻額）を表示します。</p>
                 </div>
 
-                <details className="group space-y-2 [&_summary::-webkit-details-marker]:hidden">
-                  <summary className="font-bold text-gray-700 text-sm flex items-center justify-between cursor-pointer list-none focus:outline-none p-1 -ml-1 rounded hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-4 bg-indigo-500 rounded-full inline-block"></span>
-                      オッズ入力
-                    </div>
-                    <ChevronRight size={16} className="text-gray-400 group-open:rotate-90 transition-transform duration-200" />
-                  </summary>
-                  <div className="pt-1">
-                  {uniqueCombs.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">買い目が登録されていません</p>
-                  ) : (
-                    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-                      {uniqueCombs.map(u => (
-                        <div key={u.key} className="p-3 flex items-center justify-between gap-3">
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] font-bold bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-100">{u.type}</span>
-                            </div>
-                            <p className="font-bold text-gray-800 text-sm mt-0.5">
-                              {u.text}
-                              {u.type === '単勝' && getDefaultOdds(u.type, u.text) && (
-                                <span className="text-[10px] text-green-600 ml-2 font-normal">(出馬表: {getDefaultOdds(u.type, u.text)}倍)</span>
+                {allScenarios.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">買い目が登録されていないか、的中するパターンが存在しません。</p>
+                ) : (
+                  <div className="space-y-2 pb-8">
+                    <h3 className="font-bold text-gray-700 text-sm flex items-center gap-1.5">
+                      <span className="w-1.5 h-4 bg-orange-500 rounded-full inline-block"></span>
+                      的中パターンのシミュレーション ({allScenarios.length}件)
+                    </h3>
+                    
+                    <div className="space-y-3 pt-1">
+                      {allScenarios.map((scenario, idx) => {
+                        return (
+                          <div key={idx} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                            <div className="bg-orange-50/50 px-3 py-2 border-b border-orange-100 flex items-baseline gap-1 flex-wrap">
+                              <span className="text-[13px] font-extrabold text-orange-600">
+                                {scenario.isSingle 
+                                  ? `${(Math.floor(scenario.borderOdds * 10) / 10).toFixed(1)}倍 以下` 
+                                  : `平均 ${(Math.floor(scenario.borderOdds * 10) / 10).toFixed(1)}倍 以下`}
+                              </span>
+                              <span className="text-[10px] font-bold text-orange-800">
+                                でトリガミ
+                              </span>
+                              {!scenario.isSingle && (
+                                <span className="text-[9px] text-orange-700 ml-1 opacity-80">
+                                  ※加重平均オッズ
+                                </span>
                               )}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-bold mt-0.5">購入: {u.amount.toLocaleString()}円</p>
+                            </div>
+                            <div className="p-3">
+                              <p className="text-[10px] text-gray-500 font-bold mb-2">
+                                {scenario.isSingle ? "以下の買い目が的中した場合：" : "以下の買い目がすべて同時に的中した場合："}
+                              </p>
+                              <div className="space-y-1.5">
+                                {scenario.hitCombs.map((c, i) => {
+                                  const currentOdds = activeRace.torigamiOddsMap?.[c.key] !== undefined 
+                                    ? activeRace.torigamiOddsMap[c.key] 
+                                    : (getDefaultOdds(c.type, c.text) || '');
+                                  
+                                  return (
+                                    <div key={i} className="flex justify-between items-center text-xs">
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-[9px] bg-white border border-gray-200 text-gray-600 px-1 py-0.5 rounded shadow-sm">{c.type}</span>
+                                        <span className="font-bold text-gray-700">{c.text}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[9px] text-gray-400 font-bold">{c.amount.toLocaleString()}円</span>
+                                        <span className="text-[9px] text-gray-400">×</span>
+                                        <div className="flex items-center gap-0.5">
+                                          <input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            inputMode="decimal"
+                                            placeholder="オッズ"
+                                            value={currentOdds}
+                                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
+                                            onChange={(e) => {
+                                              updateRaces(prev => prev.map(r => r.id === activeRace.id ? {
+                                                ...r,
+                                                torigamiOddsMap: { ...(r.torigamiOddsMap || {}), [c.key]: e.target.value }
+                                              } : r));
+                                            }}
+                                            className="w-14 px-1 py-0.5 text-xs font-bold text-right border border-gray-300 rounded focus:border-indigo-500 focus:ring-0 transition-colors"
+                                          />
+                                          <span className="text-[10px] text-gray-500 font-bold">倍</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              
+                              {(() => {
+                                const allOddsPresent = scenario.hitCombs.every(c => {
+                                  const val = activeRace.torigamiOddsMap?.[c.key] !== undefined ? activeRace.torigamiOddsMap[c.key] : getDefaultOdds(c.type, c.text);
+                                  return val && !isNaN(parseFloat(val));
+                                });
+                                
+                                if (!allOddsPresent) return null;
+                                
+                                const totalScenarioPayout = scenario.hitCombs.reduce((sum, c) => {
+                                  const val = activeRace.torigamiOddsMap?.[c.key] !== undefined ? activeRace.torigamiOddsMap[c.key] : getDefaultOdds(c.type, c.text);
+                                  return sum + (parseFloat(val) * c.amount);
+                                }, 0);
+                                const isGami = totalScenarioPayout < totalInvestment;
+                                
+                                return (
+                                  <div className={`mt-3 pt-2 border-t ${isGami ? 'border-red-100 bg-red-50/50' : 'border-green-100 bg-green-50/50'} -mx-3 -mb-3 px-3 py-2 flex justify-between items-center`}>
+                                    <span className="text-[10px] font-bold text-gray-600">入力オッズでの計算結果</span>
+                                    <div className="text-right">
+                                      <div className={`text-xs font-extrabold ${isGami ? 'text-red-600' : 'text-green-600'}`}>
+                                        {isGami ? `⚠️ トリガミ (-${(totalInvestment - totalScenarioPayout).toLocaleString()}円)` : `🎉 プラス (+${(totalScenarioPayout - totalInvestment).toLocaleString()}円)`}
+                                      </div>
+                                      <div className="text-[9px] text-gray-500 font-medium">
+                                        合計払戻: {totalScenarioPayout.toLocaleString()}円
+                                        {!scenario.isSingle && (
+                                          <span className="ml-1">
+                                            (平均 {(totalScenarioPayout / scenario.totalHitAmount).toFixed(1)}倍)
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const current = parseFloat(activeRace.torigamiOddsMap?.[u.key] !== undefined && activeRace.torigamiOddsMap?.[u.key] !== '' ? activeRace.torigamiOddsMap[u.key] : getDefaultOdds(u.type, u.text)) || 0;
-                                const next = Math.max(0, current - 0.1).toFixed(1);
-                                updateRaces(prev => prev.map(r => r.id === activeRace.id ? { ...r, torigamiOddsMap: { ...(r.torigamiOddsMap || {}), [u.key]: next } } : r));
-                              }}
-                              className="w-7 h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors font-bold text-lg leading-none select-none"
-                            >
-                              -
-                            </button>
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              inputMode="decimal"
-                              placeholder="オッズ"
-                              value={activeRace.torigamiOddsMap?.[u.key] !== undefined ? activeRace.torigamiOddsMap[u.key] : getDefaultOdds(u.type, u.text)}
-                              onKeyDown={(e) => {
-                                if (['e', 'E', '+', '-'].includes(e.key)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              onChange={(e) => {
-                                updateRaces(prev => prev.map(r => r.id === activeRace.id ? {
-                                  ...r,
-                                  torigamiOddsMap: { ...(r.torigamiOddsMap || {}), [u.key]: e.target.value }
-                                } : r));
-                              }}
-                              className="w-16 px-1 py-1.5 text-sm font-bold text-center border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-0 transition-colors"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const current = parseFloat(activeRace.torigamiOddsMap?.[u.key] !== undefined && activeRace.torigamiOddsMap?.[u.key] !== '' ? activeRace.torigamiOddsMap[u.key] : getDefaultOdds(u.type, u.text)) || 0;
-                                const next = (current + 0.1).toFixed(1);
-                                updateRaces(prev => prev.map(r => r.id === activeRace.id ? { ...r, torigamiOddsMap: { ...(r.torigamiOddsMap || {}), [u.key]: next } } : r));
-                              }}
-                              className="w-7 h-7 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors font-bold text-lg leading-none select-none"
-                            >
-                              +
-                            </button>
-                            <span className="text-xs font-bold text-gray-500 ml-0.5">倍</span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  )}
                   </div>
-                </details>
-
-                {torigamiScenarios.length > 0 && (
-                  <details className="group space-y-2 [&_summary::-webkit-details-marker]:hidden">
-                    <summary className="font-bold text-gray-700 text-sm flex items-center justify-between cursor-pointer list-none focus:outline-none p-1 -ml-1 rounded hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-4 bg-red-500 rounded-full inline-block"></span>
-                        トリガミになるケース ({torigamiScenarios.length}件)
-                      </div>
-                      <ChevronRight size={16} className="text-gray-400 group-open:rotate-90 transition-transform duration-200" />
-                    </summary>
-                    
-                    <div className="space-y-3 pt-1">
-                      {torigamiScenarios.map((scenario, idx) => (
-                        <div key={idx} className="bg-red-50/50 border border-red-200 rounded-xl overflow-hidden">
-                          <div className="bg-red-100/50 px-3 py-2 border-b border-red-100 flex justify-between items-center">
-                            <span className="text-xs font-bold text-red-800 flex items-center gap-1">
-                              ⚠️ トリガミ発生
-                            </span>
-                            <span className="text-sm font-extrabold text-red-600">
-                              {scenario.profit.toLocaleString()}円
-                            </span>
-                          </div>
-                          <div className="p-3">
-                            <p className="text-[10px] text-gray-500 font-bold mb-2">以下の買い目が的中した場合：</p>
-                            <div className="space-y-1.5 mb-3">
-                              {scenario.hitCombs.map((c, i) => (
-                                <div key={i} className="flex justify-between items-center text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[9px] bg-white border border-gray-200 text-gray-600 px-1 py-0.5 rounded shadow-sm">{c.type}</span>
-                                    <span className="font-bold text-gray-700">{c.text}</span>
-                                  </div>
-                                  <div className="text-gray-500 font-medium">
-                                    <span className="text-[10px] mr-1">{c.odds}倍 × {c.amount}円 =</span>
-                                    <span className="font-bold text-gray-800">{c.payout.toLocaleString()}円</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="pt-2 border-t border-red-100 flex justify-between items-center text-xs">
-                              <span className="font-bold text-gray-600">合計払戻額</span>
-                              <span className="font-extrabold text-gray-800">{scenario.totalPayout.toLocaleString()}円</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
-
-                {profitableScenarios.length > 0 && (
-                  <details className="group space-y-2 [&_summary::-webkit-details-marker]:hidden">
-                    <summary className="font-bold text-gray-700 text-sm flex items-center justify-between cursor-pointer list-none focus:outline-none p-1 -ml-1 rounded hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-4 bg-green-500 rounded-full inline-block"></span>
-                        プラス収支になるケース ({profitableScenarios.length}件)
-                      </div>
-                      <ChevronRight size={16} className="text-gray-400 group-open:rotate-90 transition-transform duration-200" />
-                    </summary>
-                    
-                    <div className="space-y-3 pt-1">
-                      {profitableScenarios.map((scenario, idx) => (
-                        <div key={idx} className="bg-green-50/50 border border-green-200 rounded-xl overflow-hidden">
-                          <div className="bg-green-100/50 px-3 py-2 border-b border-green-100 flex justify-between items-center">
-                            <span className="text-xs font-bold text-green-800 flex items-center gap-1">
-                              ✨ プラス収支
-                            </span>
-                            <span className="text-sm font-extrabold text-green-600">
-                              +{scenario.profit.toLocaleString()}円
-                            </span>
-                          </div>
-                          <div className="p-3">
-                            <p className="text-[10px] text-gray-500 font-bold mb-2">以下の買い目が的中した場合：</p>
-                            <div className="space-y-1.5 mb-3">
-                              {scenario.hitCombs.map((c, i) => (
-                                <div key={i} className="flex justify-between items-center text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[9px] bg-white border border-gray-200 text-gray-600 px-1 py-0.5 rounded shadow-sm">{c.type}</span>
-                                    <span className="font-bold text-gray-700">{c.text}</span>
-                                  </div>
-                                  <div className="text-gray-500 font-medium">
-                                    <span className="text-[10px] mr-1">{c.odds}倍 × {c.amount}円 =</span>
-                                    <span className="font-bold text-gray-800">{c.payout.toLocaleString()}円</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="pt-2 border-t border-green-100 flex justify-between items-center text-xs">
-                              <span className="font-bold text-gray-600">合計払戻額</span>
-                              <span className="font-extrabold text-gray-800">{scenario.totalPayout.toLocaleString()}円</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
                 )}
               </div>
             </div>
